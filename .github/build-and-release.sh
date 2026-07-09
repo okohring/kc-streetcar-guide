@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Layout tuning after the 0.8 reset: keeps All amenities as the default view, starts amenity cards at the top of the right column, preserves the internal amenities scroll, and gives the guide more usable width."
+CHANGELOG="Top-alignment fix after the 0.8 reset: forces the amenities scroll area, results grid, and amenity article cards to remove inherited theme spacing so the cards begin at the top of the right column."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -46,12 +46,17 @@ if ! grep -q "function buildControlBar" assets/kcsg-frontend.js; then
 fi
 
 if ! grep -q "grid-template-columns: minmax(150px, 210px) minmax(0, 1fr)" assets/kcsg-frontend.css; then
-  echo "0.8.1 layout CSS is missing."
+  echo "0.8 layout CSS is missing."
   exit 1
 fi
 
-if ! grep -q "max-width: 1100px" assets/kcsg-frontend.css; then
-  echo "Guide width tuning is missing."
+if ! grep -q "place-content: start stretch" assets/kcsg-frontend.css; then
+  echo "Results top-alignment reset is missing."
+  exit 1
+fi
+
+if ! grep -q "padding: 0 6px 0 0 !important" assets/kcsg-frontend.css; then
+  echo "Results scroll spacing reset is missing."
   exit 1
 fi
 
@@ -74,10 +79,10 @@ zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
+- Forces the amenities/results column to top-align with the map column.
+- Removes inherited theme spacing from the results scroll area, results grid, and amenity article cards.
 - Keeps All amenities as the default view.
-- Starts amenity cards at the top of the right column instead of showing a large heading gap.
 - Preserves the internal amenities scroll for long lists.
-- Gives the guide more usable width and restores stronger map/content proportions.
 - Keeps the safe release/update flow.
 NOTES
 )
