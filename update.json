@@ -1,12 +1,12 @@
 {
   "name": "KC Streetcar Guide",
   "slug": "kc-streetcar-guide",
-  "version": "0.8.13",
-  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v0.8.13/kc-streetcar-guide.zip",
+  "version": "0.8.14",
+  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v0.8.14/kc-streetcar-guide.zip",
   "details_url": "https://github.com/okohring/kc-streetcar-guide",
   "requires": "6.0",
   "tested": "6.6",
   "requires_php": "7.4",
   "description": "Interactive WordPress visitor guide for amenities near the KC Streetcar line.",
-  "changelog": "Matches the selected-stop photo and placeholder header width to the amenity cards while keeping the standardized 130px header height, simple category text headers, and stop-specific category filters."
+  "changelog": "Adds Firebase-backed live streetcar arrivals to the selected-stop header with visitor-friendly Riverfront and UMKC direction labels, first-arrival-only display, a 30-second refresh/cache, and fallback behavior."
 }
