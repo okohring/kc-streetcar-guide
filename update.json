@@ -1,12 +1,12 @@
 {
   "name": "KC Streetcar Guide",
   "slug": "kc-streetcar-guide",
-  "version": "0.8.5",
-  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v0.8.5/kc-streetcar-guide.zip",
+  "version": "0.8.6",
+  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v0.8.6/kc-streetcar-guide.zip",
   "details_url": "https://github.com/okohring/kc-streetcar-guide",
   "requires": "6.0",
   "tested": "6.6",
   "requires_php": "7.4",
   "description": "Interactive WordPress visitor guide for amenities near the KC Streetcar line.",
-  "changelog": "Top-alignment fix after the 0.8 reset: forces the amenities scroll area, results grid, and amenity article cards to remove inherited theme spacing so the cards begin at the top of the right column."
+  "changelog": "Sets the streetcar map SVG to a 400 by 900 layout, keeps the amenities scroll paired to the map height, and removes empty right-column spacing from hidden heading/stop-feature elements."
 }
