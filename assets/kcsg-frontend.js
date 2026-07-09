@@ -58,7 +58,9 @@
     var arrivalsRequestId = 0;
 
     var buttons = Array.prototype.slice.call(guide.querySelectorAll('[data-kcsg-category]'));
-    var resetButton = guide.querySelector('[data-kcsg-reset]');
+    var resetRow = guide.querySelector('.kcsg-reset-row');
+    var categoryKey = guide.querySelector('.kcsg-category-key');
+    var stopSelect = null;
     var results = guide.querySelector('[data-kcsg-results]');
     var resultsScroll = guide.querySelector('[data-kcsg-results-scroll]');
     var stopFeature = guide.querySelector('[data-kcsg-stop-feature]');
@@ -74,6 +76,54 @@
       return category ? category.name : 'Amenities';
     }
 
+    function buildControlBar() {
+      if (!categoryKey || categoryKey.closest('.kcsg-controls')) return;
+
+      var controls = document.createElement('div');
+      controls.className = 'kcsg-controls';
+
+      var categoryGroup = document.createElement('div');
+      categoryGroup.className = 'kcsg-control-group kcsg-control-group--categories';
+
+      categoryKey.parentNode.insertBefore(controls, categoryKey);
+      controls.appendChild(categoryGroup);
+      categoryGroup.appendChild(categoryKey);
+
+      if (resetRow && resetRow.parentNode) {
+        resetRow.parentNode.removeChild(resetRow);
+      }
+
+      var stopGroup = document.createElement('div');
+      stopGroup.className = 'kcsg-control-group kcsg-control-group--stop';
+
+      var selectId = 'kcsg-stop-select-' + Math.random().toString(36).slice(2, 9);
+      var stopLabelNode = document.createElement('label');
+      stopLabelNode.className = 'screen-reader-text kcsg-control-label';
+      stopLabelNode.setAttribute('for', selectId);
+      stopLabelNode.textContent = 'Streetcar stop';
+
+      stopSelect = document.createElement('select');
+      stopSelect.className = 'kcsg-stop-select';
+      stopSelect.setAttribute('id', selectId);
+      stopSelect.setAttribute('data-kcsg-stop-select', '');
+
+      var placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = 'Choose streetcar stop';
+      stopSelect.appendChild(placeholder);
+
+      Object.keys(data.stops || {}).forEach(function (stopId) {
+        var option = document.createElement('option');
+        option.value = stopId;
+        option.textContent = data.stops[stopId];
+        stopSelect.appendChild(option);
+      });
+
+      stopGroup.appendChild(stopLabelNode);
+      stopGroup.appendChild(stopSelect);
+      controls.appendChild(stopGroup);
+    }
+
     function setActiveButton(slug) {
       buttons.forEach(function (button) {
         button.classList.toggle('is-active', button.getAttribute('data-kcsg-category') === slug);
@@ -82,9 +132,13 @@
 
     function setActiveStop(stopId) {
       stopGroups.forEach(function (group) {
-        var isActive = group.id === stopId;
-        group.classList.toggle('is-active', isActive);
+        group.classList.toggle('is-active', group.id === stopId);
       });
+    }
+
+    function setStopSelect(stopId) {
+      if (!stopSelect) return;
+      stopSelect.value = stopId || '';
     }
 
     function setHoverStop(stopId, active) {
@@ -95,7 +149,6 @@
         }
       });
     }
-
 
     function buildStopHitAreas() {
       var svg = guide.querySelector('.kcsg-map-svg');
@@ -259,9 +312,6 @@
         '<div class="kcsg-live-arrivals" data-kcsg-live-arrivals data-kcsg-live-stop="' + esc(stopId) + '">' +
           '<a class="kcsg-live-kicker" href="' + esc(trackerUrl) + '" target="_blank" rel="noopener noreferrer" aria-label="Open live arrivals for ' + esc(stopLabel(stopId)) + '">Streetcar arrivals</a>' +
           '<span class="kcsg-live-status" data-kcsg-live-status>Checking live times…</span>' +
-          '<a class="kcsg-live-link" href="' + esc(trackerUrl) + '" target="_blank" rel="noopener noreferrer" aria-label="Open live arrivals for ' + esc(stopLabel(stopId)) + '">' +
-            '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3Z"></path><path d="M5 5h6v2H7v10h10v-4h2v6H5V5Z"></path></svg>' +
-          '</a>' +
         '</div>' : '';
       var liveClass = trackerUrl ? ' has-live-arrivals' : '';
 
@@ -318,7 +368,7 @@
       var categoryMarkup = category ? '<span class="kcsg-category-pill" style="--kcsg-category-color:' + esc(categoryColor) + ';">' + esc(category.name) + '</span>' : '';
       var urlMarkup = amenity.url ? '<a class="kcsg-link" href="' + esc(amenity.url) + '" target="_blank" rel="noopener noreferrer" aria-label="Open website for ' + esc(amenity.name) + '"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3Z"></path><path d="M5 5h6v2H7v10h10v-4h2v6H5V5Z"></path></svg></a>' : '';
       var descriptionMarkup = amenity.description ? '<p class="kcsg-description">' + esc(amenity.description) + '</p>' : '';
-      var stopLabel = amenity.stopLabel || 'Not assigned';
+      var stopLabelText = amenity.stopLabel || 'Not assigned';
 
       return '' +
         '<article class="kcsg-card" data-kcsg-card-stop="' + esc(amenity.stop || '') + '" style="--kcsg-category-color:' + esc(categoryColor) + ';">' +
@@ -327,7 +377,7 @@
             '<div class="kcsg-card-actions">' + categoryMarkup + urlMarkup + '</div>' +
           '</div>' +
           '<div class="kcsg-meta">' +
-            '<span class="kcsg-stop-meta"><strong>Streetcar stop</strong><button type="button" class="kcsg-stop-name" data-kcsg-card-stop="' + esc(amenity.stop || '') + '">' + esc(stopLabel) + '</button></span>' +
+            '<span class="kcsg-stop-meta"><strong>Streetcar stop</strong><button type="button" class="kcsg-stop-name" data-kcsg-card-stop="' + esc(amenity.stop || '') + '">' + esc(stopLabelText) + '</button></span>' +
             '<span><strong>Walk from stop</strong>' + esc(amenity.walkFromStop || '—') + '</span>' +
             '<span><strong>Walk from hotel</strong>' + esc(amenity.walkFromHotel || '—') + '</span>' +
             '<span><strong>Drive from hotel</strong>' + esc(amenity.driveFromHotel || '—') + '</span>' +
@@ -340,6 +390,7 @@
       var filtered = currentFilteredAmenities();
       setActiveButton(state.mode === 'category' ? state.category : 'all');
       setActiveStop(state.stop);
+      setStopSelect(state.mode === 'stop' ? state.stop : '');
       updateStopMuting();
       updateStopFeature();
 
@@ -402,6 +453,9 @@
       });
     }
 
+    buildControlBar();
+    buildStopHitAreas();
+
     buttons.forEach(function (button) {
       button.addEventListener('click', function () {
         var category = button.getAttribute('data-kcsg-category') || 'all';
@@ -412,7 +466,19 @@
       });
     });
 
-    buildStopHitAreas();
+    if (stopSelect) {
+      stopSelect.addEventListener('change', function () {
+        var stopId = stopSelect.value;
+        if (stopId) {
+          chooseStop(stopId);
+          return;
+        }
+        state.category = 'all';
+        state.stop = null;
+        state.mode = 'all';
+        render();
+      });
+    }
 
     stopGroups.forEach(function (group) {
       group.setAttribute('role', 'button');
@@ -430,15 +496,6 @@
         }
       });
     });
-
-    if (resetButton) {
-      resetButton.addEventListener('click', function () {
-        state.category = 'all';
-        state.stop = null;
-        state.mode = 'all';
-        render();
-      });
-    }
 
     render();
   }
