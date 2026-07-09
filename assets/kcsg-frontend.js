@@ -351,15 +351,33 @@
       stopFeature.innerHTML = '';
     }
 
+    function resetResultsScroll() {
+      if (!resultsScroll) return;
+
+      var apply = function () {
+        var firstCard = results ? results.querySelector('.kcsg-card') : null;
+        var targetTop = 0;
+
+        if (firstCard) {
+          targetTop = Math.max(0, firstCard.offsetTop - resultsScroll.offsetTop);
+        }
+
+        resultsScroll.scrollTop = targetTop;
+        resultsScroll.scrollLeft = 0;
+      };
+
+      apply();
+      window.requestAnimationFrame(apply);
+      window.setTimeout(apply, 60);
+      window.setTimeout(apply, 250);
+    }
+
     function chooseStop(stopId) {
       if (!stopId) return;
       state.stop = stopId;
       state.category = 'all';
       state.mode = 'stop';
       render();
-      if (resultsScroll) {
-        resultsScroll.scrollTop = 0;
-      }
     }
 
     function cardTemplate(amenity) {
@@ -394,27 +412,29 @@
       updateStopMuting();
       updateStopFeature();
 
-if (title) {
-  if (state.mode === 'stop' && state.stop) {
-    title.textContent = stopLabel(state.stop);
-  } else if (state.mode === 'category') {
-    title.textContent = getCategoryLabel(state.category);
-  } else {
-    title.textContent = 'All amenities';
-  }
-}
+      if (title) {
+        if (state.mode === 'stop' && state.stop) {
+          title.textContent = stopLabel(state.stop);
+        } else if (state.mode === 'category') {
+          title.textContent = getCategoryLabel(state.category);
+        } else {
+          title.textContent = 'All amenities';
+        }
+      }
 
-if (count) {
-  count.textContent = filtered.length === 1 ? '1 result' : filtered.length + ' results';
-}
+      if (count) {
+        count.textContent = filtered.length === 1 ? '1 result' : filtered.length + ' results';
+      }
 
       if (!filtered.length) {
         results.innerHTML = '<div class="kcsg-empty">No amenities match this selection yet.</div>';
+        resetResultsScroll();
         return;
       }
 
       results.innerHTML = filtered.map(cardTemplate).join('');
       attachResultHoverEvents();
+      resetResultsScroll();
     }
 
     function attachResultHoverEvents() {
