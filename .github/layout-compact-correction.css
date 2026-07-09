@@ -1,9 +1,10 @@
 /* Release tweak: compact screenshot-aligned layout correction. */
 body .kcsg-guide {
   width: 100% !important;
-  max-width: 760px !important;
+  max-width: 620px !important;
   min-width: 0 !important;
   margin: 0 !important;
+  padding: 0 !important;
   gap: 0 !important;
   row-gap: 0 !important;
 }
@@ -11,7 +12,7 @@ body .kcsg-guide {
 body .kcsg-guide .kcsg-header {
   display: flex !important;
   flex-direction: column !important;
-  gap: 2px !important;
+  gap: 1px !important;
   min-height: 0 !important;
   margin: 0 0 8px !important;
   padding: 0 !important;
@@ -24,7 +25,7 @@ body .kcsg-guide .kcsg-header p {
 }
 
 body .kcsg-guide .kcsg-header h2 {
-  font-size: clamp(18px, 2vw, 22px) !important;
+  font-size: 20px !important;
   line-height: 1.05 !important;
 }
 
@@ -34,10 +35,12 @@ body .kcsg-guide .kcsg-header p {
 }
 
 body .kcsg-guide .kcsg-controls {
+  display: grid !important;
   grid-template-columns: minmax(0, 1fr) 160px !important;
   align-items: center !important;
   column-gap: 14px !important;
   row-gap: 5px !important;
+  width: 100% !important;
   margin: 0 0 8px !important;
   padding: 0 !important;
 }
@@ -48,6 +51,8 @@ body .kcsg-guide .kcsg-category-key .kcsg-reset {
 }
 
 body .kcsg-guide .kcsg-category-key {
+  display: flex !important;
+  flex-wrap: wrap !important;
   gap: 4px !important;
   align-items: center !important;
   margin: 0 !important;
@@ -72,7 +77,8 @@ body .kcsg-guide .kcsg-stop-select {
 }
 
 body .kcsg-guide .kcsg-layout {
-  grid-template-columns: 126px minmax(0, 1fr) !important;
+  display: grid !important;
+  grid-template-columns: 118px minmax(0, 1fr) !important;
   gap: 12px !important;
   align-items: start !important;
   margin: 0 !important;
@@ -82,37 +88,81 @@ body .kcsg-guide .kcsg-layout {
 body .kcsg-guide .kcsg-map-panel {
   justify-content: center !important;
   align-items: flex-start !important;
-  max-height: 420px !important;
-  top: 0 !important;
+  max-height: none !important;
+  height: auto !important;
+  position: static !important;
+  top: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 body .kcsg-guide .kcsg-map-svg {
-  height: 420px !important;
-  max-height: 420px !important;
+  height: 430px !important;
+  max-height: 430px !important;
+  width: auto !important;
+  max-width: 100% !important;
 }
 
 body .kcsg-guide .kcsg-results-panel,
 body .kcsg-guide .kcsg-results-scroll {
   margin: 0 !important;
   padding: 0 !important;
+  overflow: visible !important;
+  max-height: none !important;
+  height: auto !important;
 }
 
-body .kcsg-guide .kcsg-results-scroll {
-  max-height: 420px !important;
-  overflow-y: auto !important;
+body .kcsg-guide .kcsg-results-scroll::-webkit-scrollbar {
+  display: none !important;
 }
 
-body .kcsg-guide.is-stop-with-photo .kcsg-results-heading {
+body .kcsg-guide .kcsg-results-heading {
+  display: none !important;
+}
+
+body .kcsg-guide .kcsg-stop-feature {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body .kcsg-guide .kcsg-stop-feature[hidden] {
   display: none !important;
 }
 
 body .kcsg-guide .kcsg-stop-photo {
   margin: 0 0 10px !important;
   border-radius: 10px !important;
+  border: 2px solid #ffffff !important;
 }
 
 body .kcsg-guide .kcsg-stop-photo img {
-  height: 150px !important;
+  height: 145px !important;
+}
+
+body .kcsg-guide .kcsg-stop-photo figcaption {
+  left: 10px !important;
+  bottom: 9px !important;
+  font-size: 26px !important;
+}
+
+body .kcsg-guide .kcsg-stop-photo.has-live-arrivals figcaption {
+  bottom: 34px !important;
+}
+
+body .kcsg-guide .kcsg-live-arrivals {
+  left: 10px !important;
+  right: 10px !important;
+  bottom: 9px !important;
+}
+
+body .kcsg-guide .kcsg-live-kicker {
+  font-size: 8px !important;
+}
+
+body .kcsg-guide .kcsg-results {
+  display: grid !important;
+  gap: 10px !important;
 }
 
 body .kcsg-guide .kcsg-card {
@@ -120,9 +170,36 @@ body .kcsg-guide .kcsg-card {
   padding: 10px !important;
 }
 
+body .kcsg-guide .kcsg-card-header {
+  margin-bottom: 7px !important;
+}
+
+body .kcsg-guide .kcsg-card h4 {
+  font-size: 13px !important;
+  line-height: 1.15 !important;
+}
+
 body .kcsg-guide .kcsg-meta {
   gap: 5px !important;
   margin: 7px 0 !important;
+}
+
+body .kcsg-guide .kcsg-meta span {
+  padding: 5px 6px !important;
+  font-size: 10px !important;
+  line-height: 1.18 !important;
+  border-radius: 7px !important;
+}
+
+body .kcsg-guide .kcsg-meta strong {
+  font-size: 9px !important;
+  margin-bottom: 1px !important;
+}
+
+body .kcsg-guide .kcsg-description {
+  margin-top: 6px !important;
+  font-size: 10px !important;
+  line-height: 1.35 !important;
 }
 
 @media (max-width: 760px) {
