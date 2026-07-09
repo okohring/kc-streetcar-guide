@@ -1150,10 +1150,6 @@ final class KCSG_Plugin {
 
                 <div class="kcsg-results-panel" aria-live="polite">
                     <div class="kcsg-results-scroll" data-kcsg-results-scroll>
-                        <div class="kcsg-results-heading">
-                            <h3 data-kcsg-results-title><?php esc_html_e('All amenities', 'kc-streetcar-guide'); ?></h3>
-                            <p data-kcsg-results-count></p>
-                        </div>
                         <div class="kcsg-stop-feature" data-kcsg-stop-feature hidden></div>
                         <div class="kcsg-results" data-kcsg-results></div>
                     </div>
