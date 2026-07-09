@@ -394,15 +394,19 @@
       updateStopMuting();
       updateStopFeature();
 
-      if (state.mode === 'stop' && state.stop) {
-        title.textContent = stopLabel(state.stop);
-      } else if (state.mode === 'category') {
-        title.textContent = getCategoryLabel(state.category);
-      } else {
-        title.textContent = 'All amenities';
-      }
+if (title) {
+  if (state.mode === 'stop' && state.stop) {
+    title.textContent = stopLabel(state.stop);
+  } else if (state.mode === 'category') {
+    title.textContent = getCategoryLabel(state.category);
+  } else {
+    title.textContent = 'All amenities';
+  }
+}
 
-      count.textContent = filtered.length === 1 ? '1 result' : filtered.length + ' results';
+if (count) {
+  count.textContent = filtered.length === 1 ? '1 result' : filtered.length + ' results';
+}
 
       if (!filtered.length) {
         results.innerHTML = '<div class="kcsg-empty">No amenities match this selection yet.</div>';
