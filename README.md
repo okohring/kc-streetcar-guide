@@ -1,2 +1,2 @@
-# kc-streetcar-map
+# KC Streetcar Map
 Interactive streetcar map with customizable amenities. 
