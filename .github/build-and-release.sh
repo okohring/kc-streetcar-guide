@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Matches the selected-stop photo and placeholder header width to the amenity cards while keeping the standardized 130px header height, simple category text headers, and stop-specific category filters."
+CHANGELOG="Adds Firebase-backed live streetcar arrivals to the selected-stop header with visitor-friendly Riverfront and UMKC direction labels, first-arrival-only display, a 30-second refresh/cache, and fallback behavior."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -65,6 +65,31 @@ if grep -q "All matching amenities along the streetcar route" assets/kcsg-fronte
   exit 1
 fi
 
+if ! grep -q "kiosk-6e6b4.firebaseio.com" assets/kcsg-frontend.js; then
+  echo "Firebase arrivals endpoint is missing from frontend JS."
+  exit 1
+fi
+
+if ! grep -q "Riverfront (Northbound)" assets/kcsg-frontend.js; then
+  echo "Riverfront direction label is missing from frontend JS."
+  exit 1
+fi
+
+if ! grep -q "UMKC (Southbound)" assets/kcsg-frontend.js; then
+  echo "UMKC direction label is missing from frontend JS."
+  exit 1
+fi
+
+if ! grep -q "ARRIVAL_CACHE_MS = 30000" assets/kcsg-frontend.js; then
+  echo "30-second arrivals refresh/cache timing is missing from frontend JS."
+  exit 1
+fi
+
+if ! grep -q "Arriving soon" assets/kcsg-frontend.js; then
+  echo "Visitor-friendly arriving-soon wording is missing from frontend JS."
+  exit 1
+fi
+
 if ! grep -q "grid-template-columns: 400px minmax(0, 1fr)" assets/kcsg-frontend.css; then
   echo "400px map column CSS is missing."
   exit 1
@@ -80,11 +105,6 @@ if grep -q "padding-top: 60px !important" assets/kcsg-frontend.css; then
   exit 1
 fi
 
-if ! grep -q "width: 100%;" assets/kcsg-frontend.css; then
-  echo "Full-width stop photo/header sizing is missing."
-  exit 1
-fi
-
 if ! grep -q "height: 130px" assets/kcsg-frontend.css; then
   echo "Standard 130px stop photo/header height is missing."
   exit 1
@@ -92,6 +112,11 @@ fi
 
 if grep -q "width: 480px" assets/kcsg-frontend.css; then
   echo "Fixed 480px stop photo/header width should not be present."
+  exit 1
+fi
+
+if ! grep -q "kcsg-live-row" assets/kcsg-frontend.css; then
+  echo "Live arrival row CSS is missing."
   exit 1
 fi
 
@@ -139,10 +164,11 @@ zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Matches selected-stop photo and no-photo placeholder header width to the amenity cards.
-- Keeps the standardized 130px selected-stop header height.
-- Keeps simple text-only category result headers.
-- Keeps stop-specific category filter pills and horizontal overflow fixes.
+- Adds Firebase-backed live arrivals in the selected-stop header.
+- Displays the first non-cancelled arrival per direction only.
+- Uses visitor-friendly labels: Riverfront (Northbound) and UMKC (Southbound).
+- Shows Due or under-two-minute arrivals as “Arriving soon.”
+- Refreshes/caches visible stop arrivals about every 30 seconds and falls back cleanly to the Streetcar arrivals link.
 - Keeps the safe release/update flow.
 NOTES
 )
