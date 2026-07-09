@@ -1,0 +1,83 @@
+/* KC Streetcar Guide theme shield
+   This file is prepended to the release CSS so the guide starts from a stable baseline before the component styles are applied. */
+.kcsg-guide {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif !important;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1.4;
+  text-align: left;
+  text-decoration: none;
+  text-transform: none;
+}
+
+.kcsg-guide,
+.kcsg-guide *,
+.kcsg-guide *::before,
+.kcsg-guide *::after {
+  box-sizing: border-box !important;
+}
+
+.kcsg-guide :where(h1, h2, h3, h4, h5, h6, p, figure, figcaption, article, div, span, strong, em, small, button, select, a) {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-style: normal;
+  letter-spacing: normal;
+  text-decoration-thickness: auto;
+}
+
+.kcsg-guide :where(h1, h2, h3, h4, h5, h6, p, figure, figcaption, article) {
+  margin-block-start: 0;
+  margin-block-end: 0;
+}
+
+.kcsg-guide :where(h1, h2, h3, h4, h5, h6) {
+  clear: none;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  text-transform: none;
+}
+
+.kcsg-guide :where(button, select) {
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow: none;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  text-transform: none;
+}
+
+.kcsg-guide :where(button) {
+  min-height: 0;
+}
+
+.kcsg-guide :where(a) {
+  box-shadow: none;
+}
+
+.kcsg-guide :where(img, svg) {
+  border: 0;
+  box-shadow: none;
+}
+
+.kcsg-guide :where(img) {
+  max-width: 100%;
+}
+
+.kcsg-guide :where(ul, ol) {
+  margin-block-start: 0;
+  margin-block-end: 0;
+}
+
+.kcsg-guide :where(.screen-reader-text) {
+  border: 0 !important;
+  clip: rect(1px, 1px, 1px, 1px) !important;
+  clip-path: inset(50%) !important;
+  height: 1px !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  position: absolute !important;
+  white-space: nowrap !important;
+  width: 1px !important;
+}
