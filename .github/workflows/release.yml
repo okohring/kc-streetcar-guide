@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version, without the leading v. Example: 0.7.2'
+        description: 'Release version, without the leading v. Example: 0.7.3'
         required: true
         type: string
 
@@ -36,18 +36,30 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
+      - name: Prepare release build
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
+          perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
+          cat >> assets/kcsg-frontend.css <<'CSS'
+
+/* Release tweak: hide the redundant external-link icon in the stop photo tracker header. */
+.kcsg-stop-photo .kcsg-live-link {
+  display: none !important;
+}
+CSS
+
       - name: Verify plugin header version
         shell: bash
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           if ! grep -q "Version: $VERSION" kc-streetcar-guide.php; then
             echo "Plugin header version does not match release version $VERSION."
-            echo "Update kc-streetcar-guide.php before releasing."
             exit 1
           fi
           if ! grep -q "const VERSION = '$VERSION'" kc-streetcar-guide.php; then
             echo "KCSG_Plugin::VERSION does not match release version $VERSION."
-            echo "Update kc-streetcar-guide.php before releasing."
             exit 1
           fi
 
@@ -77,7 +89,7 @@ jobs:
           else
             gh release create "$TAG" build/kc-streetcar-guide.zip \
               --title "KC Streetcar Guide $VERSION" \
-              --notes "KC Streetcar Guide $VERSION" \
+              --notes "KC Streetcar Guide $VERSION\n\n- Removed the redundant external-link icon from the stop photo tracker display." \
               --target "$GITHUB_SHA" \
               --latest
           fi
