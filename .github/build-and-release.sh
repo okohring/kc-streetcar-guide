@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Adds a desktop layout lock so amenity cards and selected-stop headers use a stable 520px width next to the 400px streetcar map, reducing theme/container-driven movement while preserving responsive behavior on smaller screens."
+CHANGELOG="Doubles the selected-stop photo/header height to 260px and strengthens the lower white gradient so stop names and live arrival text stay legible over any image."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -209,6 +209,21 @@ if ! grep -q -- "--kcsg-map-standard-width: 400px" assets/kcsg-layout-lock.css; 
   exit 1
 fi
 
+if ! grep -q "KC Streetcar Guide stop header photo height" assets/kcsg-stop-header-height.css; then
+  echo "Stop header height override source file is missing."
+  exit 1
+fi
+
+if ! grep -q "height: 260px" assets/kcsg-stop-header-height.css; then
+  echo "260px stop header height is missing."
+  exit 1
+fi
+
+if ! grep -q "rgba(255, 255, 255, 1)" assets/kcsg-stop-header-height.css; then
+  echo "Strong stop header legibility gradient is missing."
+  exit 1
+fi
+
 if ! grep -q "grid-template-columns: 400px minmax(0, 1fr)" assets/kcsg-frontend.css; then
   echo "400px map column CSS is missing."
   exit 1
@@ -221,11 +236,6 @@ fi
 
 if grep -q "padding-top: 60px !important" assets/kcsg-frontend.css; then
   echo "Streetcar map top padding should not be present."
-  exit 1
-fi
-
-if ! grep -q "height: 130px" assets/kcsg-frontend.css; then
-  echo "Standard 130px stop photo/header height is missing."
   exit 1
 fi
 
@@ -278,7 +288,7 @@ rsync -av \
   --exclude='.DS_Store' \
   ./ build/kc-streetcar-guide/
 
-cat build/kc-streetcar-guide/assets/kcsg-theme-shield.css build/kc-streetcar-guide/assets/kcsg-frontend.css build/kc-streetcar-guide/assets/kcsg-theme-overrides.css build/kc-streetcar-guide/assets/kcsg-layout-lock.css > build/kc-streetcar-guide/assets/kcsg-frontend.merged.css
+cat build/kc-streetcar-guide/assets/kcsg-theme-shield.css build/kc-streetcar-guide/assets/kcsg-frontend.css build/kc-streetcar-guide/assets/kcsg-theme-overrides.css build/kc-streetcar-guide/assets/kcsg-layout-lock.css build/kc-streetcar-guide/assets/kcsg-stop-header-height.css > build/kc-streetcar-guide/assets/kcsg-frontend.merged.css
 mv build/kc-streetcar-guide/assets/kcsg-frontend.merged.css build/kc-streetcar-guide/assets/kcsg-frontend.css
 
 if ! grep -q "KC Streetcar Guide theme shield" build/kc-streetcar-guide/assets/kcsg-frontend.css; then
@@ -296,14 +306,19 @@ if ! grep -q "KC Streetcar Guide layout lock" build/kc-streetcar-guide/assets/kc
   exit 1
 fi
 
+if ! grep -q "KC Streetcar Guide stop header photo height" build/kc-streetcar-guide/assets/kcsg-frontend.css; then
+  echo "Stop header height override was not merged into release CSS."
+  exit 1
+fi
+
 cd build
 zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Sets a stable desktop width for amenity cards and selected-stop headers.
-- Locks the desktop layout to a 400px streetcar map, 520px results column, and 24px gap.
-- Keeps the layout fluid below 981px so it still behaves on smaller screens.
+- Doubles selected-stop photo and placeholder header height from 130px to 260px.
+- Strengthens the lower white gradient behind the stop heading and live arrivals for better readability on any photo.
+- Keeps the 520px desktop card/header width lock and 400px streetcar map.
 - Keeps hidden category slug/description fields, theme shielding, amenity title override, Firebase-backed live arrivals, and safe release/update flow.
 NOTES
 )
