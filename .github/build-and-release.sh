@@ -9,12 +9,13 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Reworked the top controls with category and streetcar stop labels, added a streetcar stop dropdown beside the category buttons, moved reset into the category row as a red text link, tightened header spacing, and aligned selected-stop photo/list content with the map."
+CHANGELOG="Corrected the compact visitor guide layout to better match the provided mockup, including tighter header spacing, a capped guide width, a smaller map column, and a more compact stop photo/card stack."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
 
 python3 .github/build-release-patch.py
+cat .github/layout-compact-correction.css >> assets/kcsg-frontend.css
 
 if ! grep -q "Version: $VERSION" kc-streetcar-guide.php; then
   echo "Plugin header version does not match release version $VERSION."
@@ -41,6 +42,11 @@ if ! grep -q "visitor guide controls UI overhaul" assets/kcsg-frontend.css; then
   exit 1
 fi
 
+if ! grep -q "compact screenshot-aligned layout correction" assets/kcsg-frontend.css; then
+  echo "Compact layout correction CSS was not applied."
+  exit 1
+fi
+
 rm -rf build
 mkdir -p build/kc-streetcar-guide
 rsync -av \
@@ -55,11 +61,11 @@ zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Reworked the top controls with category and streetcar stop labels.
-- Added a streetcar stop dropdown beside the category buttons.
-- Moved reset into the category row as a red text link.
-- Tightened header spacing and aligned selected-stop photo/list content with the map.
-- Kept the 2px white stop-photo border and safe updater packaging.
+- Corrected the compact visitor guide layout to better match the provided mockup.
+- Tightened the header, intro text, and controls spacing.
+- Capped the guide width so the layout does not stretch too wide.
+- Reduced the map/content scale and tightened the stop photo/card stack.
+- Kept the safe release/update flow.
 NOTES
 )
 
