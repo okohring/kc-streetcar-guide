@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Simplifies the category admin by hiding WordPress's default slug and description fields/columns, keeping the backend focused on category name and color."
+CHANGELOG="Adds a desktop layout lock so amenity cards and selected-stop headers use a stable 520px width next to the 400px streetcar map, reducing theme/container-driven movement while preserving responsive behavior on smaller screens."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -194,6 +194,21 @@ if ! grep -q "article.kcsg-card h4" assets/kcsg-theme-overrides.css; then
   exit 1
 fi
 
+if ! grep -q "KC Streetcar Guide layout lock" assets/kcsg-layout-lock.css; then
+  echo "Desktop layout lock source file is missing."
+  exit 1
+fi
+
+if ! grep -q -- "--kcsg-card-standard-width: 520px" assets/kcsg-layout-lock.css; then
+  echo "Standard 520px card/header width is missing."
+  exit 1
+fi
+
+if ! grep -q -- "--kcsg-map-standard-width: 400px" assets/kcsg-layout-lock.css; then
+  echo "Standard 400px map width is missing."
+  exit 1
+fi
+
 if ! grep -q "grid-template-columns: 400px minmax(0, 1fr)" assets/kcsg-frontend.css; then
   echo "400px map column CSS is missing."
   exit 1
@@ -263,7 +278,7 @@ rsync -av \
   --exclude='.DS_Store' \
   ./ build/kc-streetcar-guide/
 
-cat build/kc-streetcar-guide/assets/kcsg-theme-shield.css build/kc-streetcar-guide/assets/kcsg-frontend.css build/kc-streetcar-guide/assets/kcsg-theme-overrides.css > build/kc-streetcar-guide/assets/kcsg-frontend.merged.css
+cat build/kc-streetcar-guide/assets/kcsg-theme-shield.css build/kc-streetcar-guide/assets/kcsg-frontend.css build/kc-streetcar-guide/assets/kcsg-theme-overrides.css build/kc-streetcar-guide/assets/kcsg-layout-lock.css > build/kc-streetcar-guide/assets/kcsg-frontend.merged.css
 mv build/kc-streetcar-guide/assets/kcsg-frontend.merged.css build/kc-streetcar-guide/assets/kcsg-frontend.css
 
 if ! grep -q "KC Streetcar Guide theme shield" build/kc-streetcar-guide/assets/kcsg-frontend.css; then
@@ -276,15 +291,20 @@ if ! grep -q "KC Streetcar Guide final theme overrides" build/kc-streetcar-guide
   exit 1
 fi
 
+if ! grep -q "KC Streetcar Guide layout lock" build/kc-streetcar-guide/assets/kcsg-frontend.css; then
+  echo "Desktop layout lock was not merged into release CSS."
+  exit 1
+fi
+
 cd build
 zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Hides WordPress default Category slug and description fields from the category admin screens.
-- Removes slug and description columns from the category list table.
-- Keeps category name and color as the useful editable fields.
-- Keeps the broader theme shield, amenity title override, Firebase-backed live arrivals, and safe release/update flow.
+- Sets a stable desktop width for amenity cards and selected-stop headers.
+- Locks the desktop layout to a 400px streetcar map, 520px results column, and 24px gap.
+- Keeps the layout fluid below 981px so it still behaves on smaller screens.
+- Keeps hidden category slug/description fields, theme shielding, amenity title override, Firebase-backed live arrivals, and safe release/update flow.
 NOTES
 )
 
