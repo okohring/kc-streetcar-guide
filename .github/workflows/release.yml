@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version, without the leading v. Example: 0.7.5'
+        description: 'Release version, without the leading v. Example: 0.7.6'
         required: true
         type: string
 
@@ -46,7 +46,7 @@ jobs:
           php.write_text(content)
           PY
 
-          printf '%s\n' '' '/* Release tweak: hide the redundant external-link icon in the stop photo tracker header. */' '.kcsg-stop-photo .kcsg-live-link {' '  display: none !important;' '}' >> assets/kcsg-frontend.css
+          printf '%s\n' '' '/* Release tweak: hide the redundant external-link icon in the stop photo tracker header. */' '.kcsg-stop-photo .kcsg-live-link {' '  display: none !important;' '}' '' '/* Release tweak: add a crisp white border around stop photos. */' '.kcsg-stop-photo {' '  border: 2px solid #ffffff !important;' '}' >> assets/kcsg-frontend.css
 
       - name: Verify plugin header version
         shell: bash
@@ -91,7 +91,7 @@ jobs:
           else
             gh release create "$TAG" build/kc-streetcar-guide.zip \
               --title "KC Streetcar Guide $VERSION" \
-              --notes "KC Streetcar Guide $VERSION\n\n- Removed the redundant external-link icon from the stop photo tracker display.\n- Removed the unsafe post-install folder rename step from release builds." \
+              --notes "KC Streetcar Guide $VERSION\n\n- Added a 2px white border to stop photos.\n- Removed the redundant external-link icon from the stop photo tracker display.\n- Removed the unsafe post-install folder rename step from release builds." \
               --target "$GITHUB_SHA" \
               --latest
           fi
