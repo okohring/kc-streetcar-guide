@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Sets the streetcar map SVG to a 400 by 900 layout, keeps the amenities scroll paired to the map height, and removes empty right-column spacing from hidden heading/stop-feature elements."
+CHANGELOG="Prevents horizontal side-scrolling by making the map responsive within the layout, keeps the streetcar map capped at 400 by 900, and resets the amenities scroll to the first card after stop/category changes."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -42,6 +42,11 @@ fi
 
 if ! grep -q "function buildControlBar" assets/kcsg-frontend.js; then
   echo "Stop dropdown behavior is missing from frontend JS."
+  exit 1
+fi
+
+if ! grep -q "function resetResultsScroll" assets/kcsg-frontend.js; then
+  echo "Amenities scroll reset behavior is missing from frontend JS."
   exit 1
 fi
 
@@ -84,10 +89,10 @@ zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Sets the streetcar map SVG layout to 400px by 900px.
+- Keeps the streetcar map capped at 400px by 900px.
+- Prevents horizontal side-scrolling by keeping the layout responsive inside its container.
 - Keeps the amenities scroll height paired with the taller map.
-- Removes empty right-column spacing from hidden heading and stop-feature elements.
-- Keeps invisible stop hit areas clickable but visually hidden.
+- Resets the amenities scroll to the first card after stop/category changes.
 - Keeps the safe release/update flow.
 NOTES
 )
