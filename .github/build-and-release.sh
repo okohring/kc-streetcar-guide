@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Doubles the selected-stop photo/header height to 260px and strengthens the lower white gradient so stop names and live arrival text stay legible over any image."
+CHANGELOG="Locks category result header typography against themes, keeps Google Maps links with a waypoint icon, and adds a separate optional website URL field that uses the external-link icon."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -76,7 +76,81 @@ admin_css_replacement = """        wp_add_inline_style('wp-admin', '
 if admin_css_anchor in content:
     content = content.replace(admin_css_anchor, admin_css_replacement, 1)
 
+meta_url_old = """        $url = get_post_meta($post->ID, '_kcsg_url', true);
+        $current_terms = get_the_terms($post->ID, self::TAX);
+"""
+meta_url_new = """        $url = get_post_meta($post->ID, '_kcsg_url', true);
+        $website_url = get_post_meta($post->ID, '_kcsg_website_url', true);
+        $current_terms = get_the_terms($post->ID, self::TAX);
+"""
+if meta_url_old in content:
+    content = content.replace(meta_url_old, meta_url_new, 1)
+
+url_field_old = """            <p class="kcsg-admin-field kcsg-admin-field-full">
+                <label for="kcsg_url"><strong><?php esc_html_e('URL', 'kc-streetcar-guide'); ?></strong></label>
+                <input type="url" name="kcsg_url" id="kcsg_url" value="<?php echo esc_url($url); ?>" placeholder="https://example.com" />
+            </p>
+"""
+url_field_new = """            <p class="kcsg-admin-field kcsg-admin-field-full">
+                <label for="kcsg_url"><strong><?php esc_html_e('Google Maps URL', 'kc-streetcar-guide'); ?></strong></label>
+                <input type="url" name="kcsg_url" id="kcsg_url" value="<?php echo esc_url($url); ?>" placeholder="https://www.google.com/maps/search/?api=1&query=..." />
+            </p>
+
+            <p class="kcsg-admin-field kcsg-admin-field-full">
+                <label for="kcsg_website_url"><strong><?php esc_html_e('Website URL', 'kc-streetcar-guide'); ?></strong></label>
+                <input type="url" name="kcsg_website_url" id="kcsg_website_url" value="<?php echo esc_url($website_url); ?>" placeholder="https://www.example.org/" />
+            </p>
+"""
+if url_field_old in content:
+    content = content.replace(url_field_old, url_field_new, 1)
+
+save_url_old = """            '_kcsg_description' => isset($_POST['kcsg_description']) ? sanitize_textarea_field(wp_unslash($_POST['kcsg_description'])) : '',
+            '_kcsg_url' => isset($_POST['kcsg_url']) ? esc_url_raw(wp_unslash($_POST['kcsg_url'])) : '',
+        );
+"""
+save_url_new = """            '_kcsg_description' => isset($_POST['kcsg_description']) ? sanitize_textarea_field(wp_unslash($_POST['kcsg_description'])) : '',
+            '_kcsg_url' => isset($_POST['kcsg_url']) ? esc_url_raw(wp_unslash($_POST['kcsg_url'])) : '',
+            '_kcsg_website_url' => isset($_POST['kcsg_website_url']) ? esc_url_raw(wp_unslash($_POST['kcsg_website_url'])) : '',
+        );
+"""
+if save_url_old in content:
+    content = content.replace(save_url_old, save_url_new, 1)
+
+data_url_old = """                'description' => get_post_meta($post->ID, '_kcsg_description', true),
+                'url' => get_post_meta($post->ID, '_kcsg_url', true),
+            );
+"""
+data_url_new = """                'description' => get_post_meta($post->ID, '_kcsg_description', true),
+                'mapUrl' => get_post_meta($post->ID, '_kcsg_url', true),
+                'websiteUrl' => get_post_meta($post->ID, '_kcsg_website_url', true),
+                'url' => get_post_meta($post->ID, '_kcsg_url', true),
+            );
+"""
+if data_url_old in content:
+    content = content.replace(data_url_old, data_url_new, 1)
+
 php.write_text(content)
+
+js = Path('assets/kcsg-frontend.js')
+js_content = js.read_text()
+old_url_markup = """      var urlMarkup = amenity.url ? '<a class="kcsg-link" href="' + esc(amenity.url) + '" target="_blank" rel="noopener noreferrer" aria-label="Open website for ' + esc(amenity.name) + '"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3Z"></path><path d="M5 5h6v2H7v10h10v-4h2v6H5V5Z"></path></svg></a>' : '';
+"""
+new_url_markup = """      var mapUrl = amenity.mapUrl || amenity.url || '';
+      var websiteUrl = amenity.websiteUrl || '';
+      var websiteUrlMarkup = websiteUrl ? '<a class="kcsg-link kcsg-link--website" href="' + esc(websiteUrl) + '" target="_blank" rel="noopener noreferrer" aria-label="Open website for ' + esc(amenity.name) + '"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3Z"></path><path d="M5 5h6v2H7v10h10v-4h2v6H5V5Z"></path></svg></a>' : '';
+      var mapUrlMarkup = mapUrl ? '<a class="kcsg-link kcsg-link--map" href="' + esc(mapUrl) + '" target="_blank" rel="noopener noreferrer" aria-label="Open Google Maps for ' + esc(amenity.name) + '"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"></path></svg></a>' : '';
+"""
+if old_url_markup in js_content:
+    js_content = js_content.replace(old_url_markup, new_url_markup, 1)
+
+old_actions = """            '<div class="kcsg-card-actions">' + categoryMarkup + urlMarkup + '</div>' +
+"""
+new_actions = """            '<div class="kcsg-card-actions">' + categoryMarkup + websiteUrlMarkup + mapUrlMarkup + '</div>' +
+"""
+if old_actions in js_content:
+    js_content = js_content.replace(old_actions, new_actions, 1)
+
+js.write_text(js_content)
 PY
 
 if ! grep -q "Version: $VERSION" kc-streetcar-guide.php; then
@@ -114,6 +188,31 @@ if ! grep -q "term-description-wrap" kc-streetcar-guide.php; then
   exit 1
 fi
 
+if ! grep -q "Google Maps URL" kc-streetcar-guide.php; then
+  echo "Google Maps URL admin field label is missing."
+  exit 1
+fi
+
+if ! grep -q "Website URL" kc-streetcar-guide.php; then
+  echo "Website URL admin field label is missing."
+  exit 1
+fi
+
+if ! grep -q "_kcsg_website_url" kc-streetcar-guide.php; then
+  echo "Website URL post meta field is missing."
+  exit 1
+fi
+
+if ! grep -q "'mapUrl'" kc-streetcar-guide.php; then
+  echo "Map URL frontend data field is missing."
+  exit 1
+fi
+
+if ! grep -q "'websiteUrl'" kc-streetcar-guide.php; then
+  echo "Website URL frontend data field is missing."
+  exit 1
+fi
+
 if ! grep -q "function buildControlBar" assets/kcsg-frontend.js; then
   echo "Stop dropdown behavior is missing from frontend JS."
   exit 1
@@ -136,6 +235,21 @@ fi
 
 if grep -q "All matching amenities along the streetcar route" assets/kcsg-frontend.js; then
   echo "Old category header description is still present."
+  exit 1
+fi
+
+if ! grep -q "kcsg-link--map" assets/kcsg-frontend.js; then
+  echo "Google Maps waypoint link is missing from frontend JS."
+  exit 1
+fi
+
+if ! grep -q "kcsg-link--website" assets/kcsg-frontend.js; then
+  echo "Website external link is missing from frontend JS."
+  exit 1
+fi
+
+if ! grep -q "Open Google Maps" assets/kcsg-frontend.js; then
+  echo "Google Maps link label is missing from frontend JS."
   exit 1
 fi
 
@@ -191,6 +305,11 @@ fi
 
 if ! grep -q "article.kcsg-card h4" assets/kcsg-theme-overrides.css; then
   echo "Final amenity heading selector is missing."
+  exit 1
+fi
+
+if ! grep -q "kcsg-section-heading h3" assets/kcsg-theme-overrides.css; then
+  echo "Final category heading reset is missing."
   exit 1
 fi
 
@@ -301,6 +420,11 @@ if ! grep -q "KC Streetcar Guide final theme overrides" build/kc-streetcar-guide
   exit 1
 fi
 
+if ! grep -q "kcsg-section-heading h3" build/kc-streetcar-guide/assets/kcsg-frontend.css; then
+  echo "Category heading override was not merged into release CSS."
+  exit 1
+fi
+
 if ! grep -q "KC Streetcar Guide layout lock" build/kc-streetcar-guide/assets/kcsg-frontend.css; then
   echo "Desktop layout lock was not merged into release CSS."
   exit 1
@@ -316,10 +440,10 @@ zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Doubles selected-stop photo and placeholder header height from 130px to 260px.
-- Strengthens the lower white gradient behind the stop heading and live arrivals for better readability on any photo.
-- Keeps the 520px desktop card/header width lock and 400px streetcar map.
-- Keeps hidden category slug/description fields, theme shielding, amenity title override, Firebase-backed live arrivals, and safe release/update flow.
+- Locks category result header typography against aggressive theme heading styles.
+- Keeps Google Maps links on amenity cards and changes their icon to a waypoint/map-pin symbol.
+- Adds a separate optional Website URL field for amenities; when present, it uses the external-link box-arrow icon.
+- Keeps the 260px readable stop headers, 520px desktop card/header width lock, hidden category slug/description fields, theme shielding, Firebase-backed live arrivals, and safe release/update flow.
 NOTES
 )
 
