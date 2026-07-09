@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Top-alignment fix after the 0.8 reset: forces the amenities scroll area, results grid, and amenity article cards to remove inherited theme spacing so the cards begin at the top of the right column."
+CHANGELOG="Sets the streetcar map SVG to a 400 by 900 layout, keeps the amenities scroll paired to the map height, and removes empty right-column spacing from hidden heading/stop-feature elements."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -45,13 +45,18 @@ if ! grep -q "function buildControlBar" assets/kcsg-frontend.js; then
   exit 1
 fi
 
-if ! grep -q "grid-template-columns: minmax(150px, 210px) minmax(0, 1fr)" assets/kcsg-frontend.css; then
-  echo "0.8 layout CSS is missing."
+if ! grep -q "grid-template-columns: 400px minmax(0, 1fr)" assets/kcsg-frontend.css; then
+  echo "400px map column CSS is missing."
   exit 1
 fi
 
-if ! grep -q "place-content: start stretch" assets/kcsg-frontend.css; then
-  echo "Results top-alignment reset is missing."
+if ! grep -q "height: 900px !important" assets/kcsg-frontend.css; then
+  echo "900px map SVG height is missing."
+  exit 1
+fi
+
+if ! grep -q "kcsg-stop-feature:empty" assets/kcsg-frontend.css; then
+  echo "Empty stop-feature spacing reset is missing."
   exit 1
 fi
 
@@ -79,10 +84,10 @@ zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Forces the amenities/results column to top-align with the map column.
-- Removes inherited theme spacing from the results scroll area, results grid, and amenity article cards.
-- Keeps All amenities as the default view.
-- Preserves the internal amenities scroll for long lists.
+- Sets the streetcar map SVG layout to 400px by 900px.
+- Keeps the amenities scroll height paired with the taller map.
+- Removes empty right-column spacing from hidden heading and stop-feature elements.
+- Keeps invisible stop hit areas clickable but visually hidden.
 - Keeps the safe release/update flow.
 NOTES
 )
