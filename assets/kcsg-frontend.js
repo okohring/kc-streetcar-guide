@@ -1,4 +1,7 @@
 (function () {
+  var FIREBASE_BASE = 'https://kiosk-6e6b4.firebaseio.com';
+  var ARRIVAL_CACHE_MS = 30000;
+
   function ready(fn) {
     if (document.readyState !== 'loading') {
       fn();
@@ -57,6 +60,7 @@
 
     var arrivalsCache = {};
     var arrivalsRequestId = 0;
+    var arrivalRefreshTimer = null;
 
     var buttons = Array.prototype.slice.call(guide.querySelectorAll('[data-kcsg-category]'));
     var resetRow = guide.querySelector('.kcsg-reset-row');
@@ -76,12 +80,6 @@
         return item.slug === slug;
       });
       return category ? category.name : 'Amenities';
-    }
-
-    function getCategoryBySlug(slug) {
-      return (data.categories || []).find(function (item) {
-        return item.slug === slug;
-      }) || null;
     }
 
     function buildControlBar() {
@@ -258,32 +256,108 @@
       return (data.stopTrackers && data.stopTrackers[stopId] && data.stopTrackers[stopId].url) ? data.stopTrackers[stopId].url : '';
     }
 
-    function arrivalsEndpoint(stopId) {
-      if (!data.arrivalsEndpoint || !stopId) return '';
-      return String(data.arrivalsEndpoint).replace(/\/$/, '') + '/' + encodeURIComponent(stopId);
+    function parseTrackerCodes(trackerUrl) {
+      if (!trackerUrl) return [];
+
+      var path = '';
+      try {
+        path = new URL(trackerUrl, window.location.href).pathname || '';
+      } catch (error) {
+        return [];
+      }
+
+      path = path.replace(/^\/+|\/+$/g, '').split('/')[0].toLowerCase();
+      path = path.replace(/[^a-z0-9]/g, '');
+
+      if (!path) return [];
+
+      var codes = [];
+      for (var i = 0; i < path.length; i += 3) {
+        var code = path.slice(i, i + 3);
+        if (code.length === 3) {
+          codes.push(code);
+        }
+      }
+
+      return codes;
     }
 
-    function arrivalStatusText(payload) {
-      if (!payload || !payload.ok || !payload.arrivals || !payload.arrivals.length) {
-        return '';
+    function firebaseGet(path) {
+      return fetch(FIREBASE_BASE + '/' + path.replace(/^\/+/, '') + '.json', {
+        credentials: 'omit',
+        cache: 'no-store'
+      }).then(function (response) {
+        if (!response.ok) {
+          throw new Error('Firebase request failed');
+        }
+        return response.json();
+      });
+    }
+
+    function friendlyDirection(raw) {
+      var direction = String(raw || '').replace(/^To\s+/i, '').trim();
+      if (/riverfront/i.test(direction)) {
+        return 'Riverfront (Northbound)';
+      }
+      if (/umkc/i.test(direction)) {
+        return 'UMKC (Southbound)';
+      }
+      return direction;
+    }
+
+    function normalizeArrival(prediction, stopDefinition) {
+      if (!prediction || prediction.cancelled) return null;
+
+      var rawCountdown = prediction.countdown ? String(prediction.countdown).trim() : '';
+      var minutes = Number.isFinite(Number(prediction.min)) ? Number(prediction.min) : null;
+      var seconds = Number.isFinite(Number(prediction.sec)) ? Number(prediction.sec) : null;
+      var soon = /^due$/i.test(rawCountdown) || (minutes !== null && minutes <= 2) || (seconds !== null && seconds <= 120);
+      var label = '';
+
+      if (soon) {
+        label = 'Arriving soon';
+      } else if (rawCountdown && /min/i.test(rawCountdown)) {
+        label = rawCountdown;
+      } else if (minutes !== null) {
+        label = minutes + ' min';
+      } else if (rawCountdown) {
+        label = rawCountdown;
       }
 
-      var first = payload.arrivals[0];
-      var status = '';
+      if (!label) return null;
 
-      if (first.soon) {
-        status = first.label || 'Arriving soon';
-      } else if (typeof first.minutes === 'number') {
-        status = 'Next: ' + first.minutes + ' min';
-      } else {
-        status = first.label || 'Live arrivals';
-      }
+      return {
+        label: label,
+        minutes: minutes,
+        soon: soon,
+        direction: friendlyDirection(prediction.headsign || (stopDefinition && stopDefinition.direction) || ''),
+        vehicleId: prediction.vehicleId || ''
+      };
+    }
 
-      if (first.direction) {
-        status += ' • ' + first.direction;
-      }
+    function fetchArrivalForCode(code) {
+      return firebaseGet('stops/' + encodeURIComponent(code)).then(function (stopDefinition) {
+        if (!stopDefinition || !stopDefinition.stop_id || typeof stopDefinition.direction_id === 'undefined') {
+          return null;
+        }
 
-      return status;
+        return firebaseGet(
+          'byStop/' + encodeURIComponent(stopDefinition.stop_id) + '/predictions/' + encodeURIComponent(stopDefinition.direction_id)
+        ).then(function (predictions) {
+          if (!Array.isArray(predictions)) return null;
+
+          for (var i = 0; i < predictions.length; i += 1) {
+            var arrival = normalizeArrival(predictions[i], stopDefinition);
+            if (arrival) {
+              return arrival;
+            }
+          }
+
+          return null;
+        });
+      }).catch(function () {
+        return null;
+      });
     }
 
     function setLiveArrivalStatus(stopId, payload) {
@@ -293,46 +367,107 @@
       var statusNode = liveNode.querySelector('[data-kcsg-live-status]');
       if (!statusNode) return;
 
-      var text = arrivalStatusText(payload);
-      statusNode.textContent = text;
-      statusNode.hidden = !text;
-      liveNode.classList.toggle('has-arrivals', !!(payload && payload.ok));
-      liveNode.classList.toggle('has-fallback', !(payload && payload.ok));
+      if (!payload || !payload.ok || !payload.arrivals || !payload.arrivals.length) {
+        statusNode.innerHTML = '';
+        statusNode.hidden = true;
+        liveNode.classList.remove('has-arrivals');
+        liveNode.classList.add('has-fallback');
+        return;
+      }
+
+      statusNode.innerHTML = payload.arrivals.map(function (arrival) {
+        return '' +
+          '<span class="kcsg-live-row">' +
+            '<span class="kcsg-live-direction">' + esc(arrival.direction || 'Streetcar') + ':</span>' +
+            '<span class="kcsg-live-time">' + esc(arrival.label || 'Live arrivals') + '</span>' +
+          '</span>';
+      }).join('');
+      statusNode.hidden = false;
+      liveNode.classList.add('has-arrivals');
+      liveNode.classList.remove('has-fallback');
     }
 
-    function loadArrivals(stopId) {
+    function loadArrivals(stopId, force) {
       var liveNode = stopFeature ? stopFeature.querySelector('[data-kcsg-live-arrivals]') : null;
-      var endpoint = arrivalsEndpoint(stopId);
+      var trackerUrl = trackerForStop(stopId);
+      var codes = parseTrackerCodes(trackerUrl);
+      var cached = arrivalsCache[stopId];
+      var now = Date.now();
 
-      if (!liveNode || !endpoint) return;
+      if (!liveNode || !trackerUrl || !codes.length) return;
 
-      if (arrivalsCache[stopId]) {
-        setLiveArrivalStatus(stopId, arrivalsCache[stopId]);
+      if (!force && cached && cached.expires > now) {
+        setLiveArrivalStatus(stopId, cached.payload);
         return;
       }
 
       var requestId = ++arrivalsRequestId;
       var statusNode = liveNode.querySelector('[data-kcsg-live-status]');
-      if (statusNode) {
+      if (statusNode && !cached) {
         statusNode.textContent = 'Checking live times…';
+        statusNode.hidden = false;
       }
 
-      fetch(endpoint, { credentials: 'same-origin' })
-        .then(function (response) {
-          if (!response.ok) throw new Error('Arrival request failed');
-          return response.json();
-        })
-        .then(function (payload) {
-          if (requestId !== arrivalsRequestId) return;
-          arrivalsCache[stopId] = payload;
-          setLiveArrivalStatus(stopId, payload);
-        })
-        .catch(function () {
-          if (requestId !== arrivalsRequestId) return;
-          var fallback = { ok: false, arrivals: [] };
-          arrivalsCache[stopId] = fallback;
-          setLiveArrivalStatus(stopId, fallback);
+      Promise.all(codes.map(fetchArrivalForCode)).then(function (arrivalResults) {
+        if (requestId !== arrivalsRequestId) return;
+
+        var seenDirections = {};
+        var arrivals = arrivalResults.filter(function (arrival) {
+          if (!arrival || !arrival.direction) return false;
+          if (seenDirections[arrival.direction]) return false;
+          seenDirections[arrival.direction] = true;
+          return true;
         });
+
+        var payload = {
+          ok: arrivals.length > 0,
+          stop: stopId,
+          stopLabel: stopLabel(stopId),
+          trackerUrl: trackerUrl,
+          arrivals: arrivals,
+          updatedAt: new Date().toISOString()
+        };
+
+        arrivalsCache[stopId] = {
+          expires: Date.now() + ARRIVAL_CACHE_MS,
+          payload: payload
+        };
+
+        setLiveArrivalStatus(stopId, payload);
+      }).catch(function () {
+        if (requestId !== arrivalsRequestId) return;
+
+        var fallback = {
+          ok: false,
+          stop: stopId,
+          stopLabel: stopLabel(stopId),
+          trackerUrl: trackerUrl,
+          arrivals: [],
+          updatedAt: new Date().toISOString()
+        };
+
+        arrivalsCache[stopId] = {
+          expires: Date.now() + ARRIVAL_CACHE_MS,
+          payload: fallback
+        };
+
+        setLiveArrivalStatus(stopId, fallback);
+      });
+    }
+
+    function setArrivalRefresh(stopId) {
+      if (arrivalRefreshTimer) {
+        window.clearInterval(arrivalRefreshTimer);
+        arrivalRefreshTimer = null;
+      }
+
+      if (!stopId || !trackerForStop(stopId)) return;
+
+      arrivalRefreshTimer = window.setInterval(function () {
+        if (state.mode === 'stop' && state.stop === stopId) {
+          loadArrivals(stopId, true);
+        }
+      }, ARRIVAL_CACHE_MS);
     }
 
     function selectedStopPhotoMarkup(stopId) {
@@ -373,6 +508,7 @@
 
     function updateStopFeature() {
       guide.classList.remove('is-stop-with-photo');
+      setArrivalRefresh(null);
       if (!stopFeature) return;
 
       if (state.mode === 'stop' && state.stop) {
@@ -381,7 +517,8 @@
           guide.classList.add('is-stop-with-photo');
           stopFeature.hidden = false;
           stopFeature.innerHTML = markup;
-          loadArrivals(state.stop);
+          loadArrivals(state.stop, false);
+          setArrivalRefresh(state.stop);
           return;
         }
       }
