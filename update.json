@@ -1,12 +1,12 @@
 {
   "name": "KC Streetcar Guide",
   "slug": "kc-streetcar-guide",
-  "version": "0.7.11",
-  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v0.7.11/kc-streetcar-guide.zip",
+  "version": "0.7.12",
+  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v0.7.12/kc-streetcar-guide.zip",
   "details_url": "https://github.com/okohring/kc-streetcar-guide",
   "requires": "6.0",
   "tested": "6.6",
   "requires_php": "7.4",
   "description": "Interactive WordPress visitor guide for amenities near the KC Streetcar line.",
-  "changelog": "Reworked the top controls with category and streetcar stop labels, added a streetcar stop dropdown beside the category buttons, moved reset into the category row as a red text link, tightened header spacing, and aligned selected-stop photo/list content with the map."
+  "changelog": "Corrected the compact visitor guide layout to better match the provided mockup, including tighter header spacing, a capped guide width, a smaller map column, and a more compact stop photo/card stack."
 }
