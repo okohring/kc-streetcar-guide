@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Locks category result header typography against themes, keeps Google Maps links with a waypoint icon, and adds a separate optional website URL field that uses the external-link icon."
+CHANGELOG="Fixes the selected-stop photo overlay so the 260px header renders as one continuous image with a clean bottom gradient behind the stop name and live arrivals."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -343,6 +343,21 @@ if ! grep -q "rgba(255, 255, 255, 1)" assets/kcsg-stop-header-height.css; then
   exit 1
 fi
 
+if ! grep -q "inset: auto 0 0 0 !important" assets/kcsg-stop-header-height.css; then
+  echo "Stop header gradient should be anchored to the bottom only."
+  exit 1
+fi
+
+if ! grep -q "height: 68% !important" assets/kcsg-stop-header-height.css; then
+  echo "Stop header gradient height override is missing."
+  exit 1
+fi
+
+if ! grep -q "object-fit: cover !important" assets/kcsg-stop-header-height.css; then
+  echo "Stop header image cover behavior is missing."
+  exit 1
+fi
+
 if ! grep -q "grid-template-columns: 400px minmax(0, 1fr)" assets/kcsg-frontend.css; then
   echo "400px map column CSS is missing."
   exit 1
@@ -435,15 +450,19 @@ if ! grep -q "KC Streetcar Guide stop header photo height" build/kc-streetcar-gu
   exit 1
 fi
 
+if ! grep -q "inset: auto 0 0 0 !important" build/kc-streetcar-guide/assets/kcsg-frontend.css; then
+  echo "Stop header gradient bottom-anchor override was not merged into release CSS."
+  exit 1
+fi
+
 cd build
 zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Locks category result header typography against aggressive theme heading styles.
-- Keeps Google Maps links on amenity cards and changes their icon to a waypoint/map-pin symbol.
-- Adds a separate optional Website URL field for amenities; when present, it uses the external-link box-arrow icon.
-- Keeps the 260px readable stop headers, 520px desktop card/header width lock, hidden category slug/description fields, theme shielding, Firebase-backed live arrivals, and safe release/update flow.
+- Fixes the selected-stop photo overlay so the taller header displays as one continuous image.
+- Anchors the gradient to the lower portion of the photo instead of covering/splitting the image.
+- Keeps the 260px readable stop headers, category header lock, waypoint Google Maps icon, optional website URL, 520px desktop card/header width lock, hidden category slug/description fields, theme shielding, Firebase-backed live arrivals, and safe release/update flow.
 NOTES
 )
 
