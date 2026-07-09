@@ -1,12 +1,12 @@
 {
   "name": "KC Streetcar Guide",
   "slug": "kc-streetcar-guide",
-  "version": "0.9.0",
-  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v0.9.0/kc-streetcar-guide.zip",
+  "version": "0.9.1",
+  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v0.9.1/kc-streetcar-guide.zip",
   "details_url": "https://github.com/okohring/kc-streetcar-guide",
   "requires": "6.0",
   "tested": "6.6",
   "requires_php": "7.4",
   "description": "Interactive WordPress visitor guide for amenities near the KC Streetcar line.",
-  "changelog": "Simplifies the category admin by hiding WordPress's default slug and description fields/columns, keeping the backend focused on category name and color."
+  "changelog": "Adds a desktop layout lock so amenity cards and selected-stop headers use a stable 520px width next to the 400px streetcar map, reducing theme/container-driven movement while preserving responsive behavior on smaller screens."
 }
