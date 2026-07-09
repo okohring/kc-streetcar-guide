@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Front-end layout reset: rebuilt the visitor guide layout around the intended map-left, selected-stop-and-amenities-right structure, restored the useful amenities scroll, added the stop dropdown as real front-end behavior, and removed the stacked release-only layout patches."
+CHANGELOG="Layout tuning after the 0.8 reset: keeps All amenities as the default view, starts amenity cards at the top of the right column, preserves the internal amenities scroll, and gives the guide more usable width."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -45,8 +45,13 @@ if ! grep -q "function buildControlBar" assets/kcsg-frontend.js; then
   exit 1
 fi
 
-if ! grep -q "grid-template-columns: minmax(120px, 170px) minmax(0, 1fr)" assets/kcsg-frontend.css; then
-  echo "Clean 0.8 layout CSS is missing."
+if ! grep -q "grid-template-columns: minmax(150px, 210px) minmax(0, 1fr)" assets/kcsg-frontend.css; then
+  echo "0.8.1 layout CSS is missing."
+  exit 1
+fi
+
+if ! grep -q "max-width: 1100px" assets/kcsg-frontend.css; then
+  echo "Guide width tuning is missing."
   exit 1
 fi
 
@@ -69,11 +74,11 @@ zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Rebuilt the front-end layout from the source CSS/JS instead of stacking release-only overrides.
-- Restored the intended map-left and selected-stop/amenities-right layout.
-- Kept the internal amenities scroll so long lists can be browsed without losing the map.
-- Added the streetcar stop dropdown as real front-end behavior.
-- Kept the safe release/update flow.
+- Keeps All amenities as the default view.
+- Starts amenity cards at the top of the right column instead of showing a large heading gap.
+- Preserves the internal amenities scroll for long lists.
+- Gives the guide more usable width and restores stronger map/content proportions.
+- Keeps the safe release/update flow.
 NOTES
 )
 
