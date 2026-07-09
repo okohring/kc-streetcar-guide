@@ -504,14 +504,9 @@
         return '';
       }
 
-      var category = getCategoryBySlug(state.category);
-      var color = cssColor(category && category.color, '#008bd2');
-      var label = getCategoryLabel(state.category);
-
       return '' +
-        '<div class="kcsg-section-heading" style="--kcsg-category-color:' + esc(color) + ';">' +
-          '<h3>' + esc(label) + '</h3>' +
-          '<p>All matching amenities along the streetcar route.</p>' +
+        '<div class="kcsg-section-heading">' +
+          '<h3>' + esc(getCategoryLabel(state.category)) + '</h3>' +
         '</div>';
     }
 
