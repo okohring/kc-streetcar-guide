@@ -422,7 +422,7 @@
   letter-spacing: -0.04em;
   padding: 0;
   background: transparent;
-  border: 0.5px #ffffff;
+  border: 0;
   border-radius: 0;
   box-shadow: none;
   -webkit-text-stroke: 0;
@@ -431,7 +431,7 @@
 }
 
 .kcsg-stop-photo.has-live-arrivals figcaption {
-  bottom: 46px;
+  bottom: 60px;
 }
 
 .kcsg-live-arrivals {
@@ -439,21 +439,23 @@
   z-index: 2;
   left: 16px;
   right: 16px;
-  bottom: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  bottom: 10px;
+  display: grid;
+  gap: 2px;
   min-width: 0;
   color: var(--kcsg-blue-dark);
-  font-size: 13px;
-  line-height: 1.1;
+  font-size: 11px;
+  line-height: 1.15;
 }
 
 .kcsg-live-kicker {
-  flex: 0 0 auto;
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.08em;
+  line-height: 1.1;
   text-transform: uppercase;
   color: rgba(11, 79, 115, 0.78) !important;
   text-decoration: none !important;
@@ -467,16 +469,34 @@
 }
 
 .kcsg-live-status {
+  display: grid;
+  gap: 2px;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 100%;
+  overflow: visible;
+  white-space: normal;
   font-weight: 650;
 }
 
 .kcsg-live-status[hidden],
 .kcsg-live-arrivals.has-fallback .kcsg-live-status {
   display: none !important;
+}
+
+.kcsg-live-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 3px 5px;
+  min-width: 0;
+}
+
+.kcsg-live-direction {
+  font-weight: 800;
+}
+
+.kcsg-live-time {
+  font-weight: 650;
 }
 
 .kcsg-results {
@@ -757,7 +777,10 @@
 .kcsg-card-actions,
 .kcsg-section-heading,
 .kcsg-stop-category-key,
-.kcsg-stop-category-buttons {
+.kcsg-stop-category-buttons,
+.kcsg-live-arrivals,
+.kcsg-live-status,
+.kcsg-live-row {
   max-width: 100% !important;
   min-width: 0 !important;
 }
@@ -776,7 +799,11 @@
 .kcsg-section-heading h3,
 .kcsg-section-heading p,
 .kcsg-stop-category-label,
-.kcsg-stop-category-button {
+.kcsg-stop-category-button,
+.kcsg-live-arrivals,
+.kcsg-live-row,
+.kcsg-live-direction,
+.kcsg-live-time {
   overflow-wrap: anywhere !important;
   word-break: normal;
 }
