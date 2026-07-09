@@ -1,9 +1,6 @@
 name: Build and Release Plugin
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       version:
@@ -26,13 +23,8 @@ jobs:
         id: version
         shell: bash
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            VERSION="${{ github.event.inputs.version }}"
-            TAG="v${VERSION#v}"
-          else
-            TAG="${GITHUB_REF_NAME}"
-            VERSION="${TAG#v}"
-          fi
+          VERSION="${{ github.event.inputs.version }}"
+          TAG="v${VERSION#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
@@ -42,13 +34,7 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
           perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
-          cat >> assets/kcsg-frontend.css <<'CSS'
-
-/* Release tweak: hide the redundant external-link icon in the stop photo tracker header. */
-.kcsg-stop-photo .kcsg-live-link {
-  display: none !important;
-}
-CSS
+          printf '%s\n' '' '/* Release tweak: hide the redundant external-link icon in the stop photo tracker header. */' '.kcsg-stop-photo .kcsg-live-link {' '  display: none !important;' '}' >> assets/kcsg-frontend.css
 
       - name: Verify plugin header version
         shell: bash
