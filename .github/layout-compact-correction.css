@@ -1,0 +1,146 @@
+/* Release tweak: compact screenshot-aligned layout correction. */
+body .kcsg-guide {
+  width: 100% !important;
+  max-width: 760px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  row-gap: 0 !important;
+}
+
+body .kcsg-guide .kcsg-header {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  min-height: 0 !important;
+  margin: 0 0 8px !important;
+  padding: 0 !important;
+}
+
+body .kcsg-guide .kcsg-header h2,
+body .kcsg-guide .kcsg-header p {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body .kcsg-guide .kcsg-header h2 {
+  font-size: clamp(18px, 2vw, 22px) !important;
+  line-height: 1.05 !important;
+}
+
+body .kcsg-guide .kcsg-header p {
+  font-size: 11px !important;
+  line-height: 1.15 !important;
+}
+
+body .kcsg-guide .kcsg-controls {
+  grid-template-columns: minmax(0, 1fr) 160px !important;
+  align-items: center !important;
+  column-gap: 14px !important;
+  row-gap: 5px !important;
+  margin: 0 0 8px !important;
+  padding: 0 !important;
+}
+
+body .kcsg-guide .kcsg-control-label,
+body .kcsg-guide .kcsg-category-key .kcsg-reset {
+  display: none !important;
+}
+
+body .kcsg-guide .kcsg-category-key {
+  gap: 4px !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body .kcsg-guide .kcsg-category-button {
+  padding: 5px 8px !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+}
+
+body .kcsg-guide .kcsg-stop-select {
+  min-height: 24px !important;
+  height: 24px !important;
+  border: 1px solid #cbd7df !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  padding: 2px 6px !important;
+}
+
+body .kcsg-guide .kcsg-layout {
+  grid-template-columns: 126px minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: start !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body .kcsg-guide .kcsg-map-panel {
+  justify-content: center !important;
+  align-items: flex-start !important;
+  max-height: 420px !important;
+  top: 0 !important;
+}
+
+body .kcsg-guide .kcsg-map-svg {
+  height: 420px !important;
+  max-height: 420px !important;
+}
+
+body .kcsg-guide .kcsg-results-panel,
+body .kcsg-guide .kcsg-results-scroll {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body .kcsg-guide .kcsg-results-scroll {
+  max-height: 420px !important;
+  overflow-y: auto !important;
+}
+
+body .kcsg-guide.is-stop-with-photo .kcsg-results-heading {
+  display: none !important;
+}
+
+body .kcsg-guide .kcsg-stop-photo {
+  margin: 0 0 10px !important;
+  border-radius: 10px !important;
+}
+
+body .kcsg-guide .kcsg-stop-photo img {
+  height: 150px !important;
+}
+
+body .kcsg-guide .kcsg-card {
+  border-radius: 10px !important;
+  padding: 10px !important;
+}
+
+body .kcsg-guide .kcsg-meta {
+  gap: 5px !important;
+  margin: 7px 0 !important;
+}
+
+@media (max-width: 760px) {
+  body .kcsg-guide {
+    max-width: 100% !important;
+  }
+
+  body .kcsg-guide .kcsg-controls,
+  body .kcsg-guide .kcsg-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  body .kcsg-guide .kcsg-map-panel,
+  body .kcsg-guide .kcsg-map-svg {
+    max-height: 520px !important;
+  }
+
+  body .kcsg-guide .kcsg-map-svg {
+    height: min(520px, 76vh) !important;
+  }
+}
