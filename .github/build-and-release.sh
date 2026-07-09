@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Removes the added map top padding, standardizes selected-stop photo and placeholder headers to 480 by 130, and keeps simple category text headers plus stop-specific category filters."
+CHANGELOG="Matches the selected-stop photo and placeholder header width to the amenity cards while keeping the standardized 130px header height, simple category text headers, and stop-specific category filters."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -80,13 +80,18 @@ if grep -q "padding-top: 60px !important" assets/kcsg-frontend.css; then
   exit 1
 fi
 
-if ! grep -q "width: 480px" assets/kcsg-frontend.css; then
-  echo "Standard 480px stop photo/header width is missing."
+if ! grep -q "width: 100%;" assets/kcsg-frontend.css; then
+  echo "Full-width stop photo/header sizing is missing."
   exit 1
 fi
 
 if ! grep -q "height: 130px" assets/kcsg-frontend.css; then
   echo "Standard 130px stop photo/header height is missing."
+  exit 1
+fi
+
+if grep -q "width: 480px" assets/kcsg-frontend.css; then
+  echo "Fixed 480px stop photo/header width should not be present."
   exit 1
 fi
 
@@ -134,8 +139,8 @@ zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Removes the added 60px top padding above the streetcar map/SVG.
-- Standardizes selected-stop photo and no-photo placeholder headers to 480px by 130px.
+- Matches selected-stop photo and no-photo placeholder header width to the amenity cards.
+- Keeps the standardized 130px selected-stop header height.
 - Keeps simple text-only category result headers.
 - Keeps stop-specific category filter pills and horizontal overflow fixes.
 - Keeps the safe release/update flow.
