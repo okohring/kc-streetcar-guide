@@ -8,5 +8,5 @@
   "tested": "6.6",
   "requires_php": "7.4",
   "description": "Interactive WordPress visitor guide for amenities near the KC Streetcar line.",
-  "changelog": "Sets the streetcar map SVG to a 400 by 900 layout, keeps the amenities scroll paired to the map height, and removes empty right-column spacing from hidden heading/stop-feature elements."
+  "changelog": "Prevents horizontal side-scrolling by making the map responsive within the layout, keeps the streetcar map capped at 400 by 900, and resets the amenities scroll to the first card after stop/category changes."
 }
