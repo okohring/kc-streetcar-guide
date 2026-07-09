@@ -1,8 +1,8 @@
 {
   "name": "KC Streetcar Guide",
   "slug": "kc-streetcar-guide",
-  "version": "0.8.4",
-  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v0.8.4/kc-streetcar-guide.zip",
+  "version": "0.8.5",
+  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v0.8.5/kc-streetcar-guide.zip",
   "details_url": "https://github.com/okohring/kc-streetcar-guide",
   "requires": "6.0",
   "tested": "6.6",
