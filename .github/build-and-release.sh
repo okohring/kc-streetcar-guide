@@ -9,13 +9,21 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Corrected the compact visitor guide layout to better match the provided mockup, including tighter header spacing, a capped guide width, a smaller map column, and a more compact stop photo/card stack."
+CHANGELOG="Front-end layout reset: rebuilt the visitor guide layout around the intended map-left, selected-stop-and-amenities-right structure, restored the useful amenities scroll, added the stop dropdown as real front-end behavior, and removed the stacked release-only layout patches."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
 
-python3 .github/build-release-patch.py
-cat .github/layout-compact-correction.css >> assets/kcsg-frontend.css
+python3 - <<'PY'
+from pathlib import Path
+import re
+
+php = Path('kc-streetcar-guide.php')
+content = php.read_text()
+content = content.replace("        add_filter('upgrader_post_install', array($this, 'rename_release_folder'), 10, 3);\n", "")
+content = re.sub(r"\n    public function rename_release_folder\(\$response, \$hook_extra, \$result\) \{.*?\n    \}\n", "\n", content, flags=re.S)
+php.write_text(content)
+PY
 
 if ! grep -q "Version: $VERSION" kc-streetcar-guide.php; then
   echo "Plugin header version does not match release version $VERSION."
@@ -32,18 +40,18 @@ if grep -q "upgrader_post_install" kc-streetcar-guide.php; then
   exit 1
 fi
 
-if ! grep -q "kcsg-stop-select" assets/kcsg-frontend.js; then
-  echo "Stop select UI patch was not applied."
+if ! grep -q "function buildControlBar" assets/kcsg-frontend.js; then
+  echo "Stop dropdown behavior is missing from frontend JS."
   exit 1
 fi
 
-if ! grep -q "visitor guide controls UI overhaul" assets/kcsg-frontend.css; then
-  echo "UI overhaul CSS patch was not applied."
+if ! grep -q "grid-template-columns: minmax(120px, 170px) minmax(0, 1fr)" assets/kcsg-frontend.css; then
+  echo "Clean 0.8 layout CSS is missing."
   exit 1
 fi
 
-if ! grep -q "compact screenshot-aligned layout correction" assets/kcsg-frontend.css; then
-  echo "Compact layout correction CSS was not applied."
+if grep -q "compact screenshot-aligned layout correction" assets/kcsg-frontend.css; then
+  echo "Old stacked correction CSS is still present."
   exit 1
 fi
 
@@ -61,10 +69,10 @@ zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Corrected the compact visitor guide layout to better match the provided mockup.
-- Tightened the header, intro text, and controls spacing.
-- Capped the guide width so the layout does not stretch too wide.
-- Reduced the map/content scale and tightened the stop photo/card stack.
+- Rebuilt the front-end layout from the source CSS/JS instead of stacking release-only overrides.
+- Restored the intended map-left and selected-stop/amenities-right layout.
+- Kept the internal amenities scroll so long lists can be browsed without losing the map.
+- Added the streetcar stop dropdown as real front-end behavior.
 - Kept the safe release/update flow.
 NOTES
 )
@@ -81,7 +89,6 @@ $NOTES" \
     --latest
 fi
 
-# Only after the ZIP has been successfully uploaded do we publish the update manifest.
 cat > update.json <<EOF
 {
   "name": "KC Streetcar Guide",
