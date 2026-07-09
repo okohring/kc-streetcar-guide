@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version, without the leading v. Example: 0.7.3'
+        description: 'Release version, without the leading v. Example: 0.7.5'
         required: true
         type: string
 
@@ -34,6 +34,18 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
           perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          php = Path('kc-streetcar-guide.php')
+          content = php.read_text()
+          content = content.replace("        add_filter('upgrader_post_install', array($this, 'rename_release_folder'), 10, 3);\n", "")
+          content = re.sub(r"\n    public function rename_release_folder\(\$response, \$hook_extra, \$result\) \{.*?\n    \}\n", "\n", content, flags=re.S)
+          php.write_text(content)
+          PY
+
           printf '%s\n' '' '/* Release tweak: hide the redundant external-link icon in the stop photo tracker header. */' '.kcsg-stop-photo .kcsg-live-link {' '  display: none !important;' '}' >> assets/kcsg-frontend.css
 
       - name: Verify plugin header version
@@ -46,6 +58,10 @@ jobs:
           fi
           if ! grep -q "const VERSION = '$VERSION'" kc-streetcar-guide.php; then
             echo "KCSG_Plugin::VERSION does not match release version $VERSION."
+            exit 1
+          fi
+          if grep -q "upgrader_post_install" kc-streetcar-guide.php; then
+            echo "Unsafe post-install updater hook is still present."
             exit 1
           fi
 
@@ -75,7 +91,7 @@ jobs:
           else
             gh release create "$TAG" build/kc-streetcar-guide.zip \
               --title "KC Streetcar Guide $VERSION" \
-              --notes "KC Streetcar Guide $VERSION\n\n- Removed the redundant external-link icon from the stop photo tracker display." \
+              --notes "KC Streetcar Guide $VERSION\n\n- Removed the redundant external-link icon from the stop photo tracker display.\n- Removed the unsafe post-install folder rename step from release builds." \
               --target "$GITHUB_SHA" \
               --latest
           fi
