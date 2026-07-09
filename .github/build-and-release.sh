@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Adds a scoped theme shield so the guide uses a stable plugin baseline instead of inheriting typography, button, link, image, and spacing styles from the installing site theme."
+CHANGELOG="Adds a final scoped override for amenity card titles so aggressive theme heading styles cannot change their typography, spacing, casing, or pseudo-elements."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -105,6 +105,21 @@ if ! grep -q "appearance: none" assets/kcsg-theme-shield.css; then
   exit 1
 fi
 
+if ! grep -q "KC Streetcar Guide final theme overrides" assets/kcsg-theme-overrides.css; then
+  echo "Final theme override source file is missing."
+  exit 1
+fi
+
+if ! grep -q "all: unset" assets/kcsg-theme-overrides.css; then
+  echo "Final amenity heading reset is missing."
+  exit 1
+fi
+
+if ! grep -q "article.kcsg-card h4" assets/kcsg-theme-overrides.css; then
+  echo "Final amenity heading selector is missing."
+  exit 1
+fi
+
 if ! grep -q "grid-template-columns: 400px minmax(0, 1fr)" assets/kcsg-frontend.css; then
   echo "400px map column CSS is missing."
   exit 1
@@ -174,11 +189,16 @@ rsync -av \
   --exclude='.DS_Store' \
   ./ build/kc-streetcar-guide/
 
-cat build/kc-streetcar-guide/assets/kcsg-theme-shield.css build/kc-streetcar-guide/assets/kcsg-frontend.css > build/kc-streetcar-guide/assets/kcsg-frontend.merged.css
+cat build/kc-streetcar-guide/assets/kcsg-theme-shield.css build/kc-streetcar-guide/assets/kcsg-frontend.css build/kc-streetcar-guide/assets/kcsg-theme-overrides.css > build/kc-streetcar-guide/assets/kcsg-frontend.merged.css
 mv build/kc-streetcar-guide/assets/kcsg-frontend.merged.css build/kc-streetcar-guide/assets/kcsg-frontend.css
 
 if ! grep -q "KC Streetcar Guide theme shield" build/kc-streetcar-guide/assets/kcsg-frontend.css; then
   echo "Theme shield was not merged into release CSS."
+  exit 1
+fi
+
+if ! grep -q "KC Streetcar Guide final theme overrides" build/kc-streetcar-guide/assets/kcsg-frontend.css; then
+  echo "Final theme overrides were not merged into release CSS."
   exit 1
 fi
 
@@ -187,10 +207,9 @@ zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Adds a scoped theme shield that is prepended to the release CSS.
-- Stabilizes plugin typography, button/select appearance, link/image defaults, spacing, and box sizing inside the guide.
-- Helps the guide look consistent across different WordPress themes and builders.
-- Keeps Firebase-backed live arrivals and the safe release/update flow.
+- Adds a final scoped override for amenity card titles.
+- Resets amenity title h4s so theme heading fonts, casing, spacing, and pseudo-elements cannot leak in.
+- Keeps the broader theme shield, Firebase-backed live arrivals, and the safe release/update flow.
 NOTES
 )
 
