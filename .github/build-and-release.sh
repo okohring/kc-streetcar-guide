@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Adds Firebase-backed live streetcar arrivals to the selected-stop header with visitor-friendly Riverfront and UMKC direction labels, first-arrival-only display, a 30-second refresh/cache, and fallback behavior."
+CHANGELOG="Adds a scoped theme shield so the guide uses a stable plugin baseline instead of inheriting typography, button, link, image, and spacing styles from the installing site theme."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -90,6 +90,21 @@ if ! grep -q "Arriving soon" assets/kcsg-frontend.js; then
   exit 1
 fi
 
+if ! grep -q "KC Streetcar Guide theme shield" assets/kcsg-theme-shield.css; then
+  echo "Scoped frontend theme shield source file is missing."
+  exit 1
+fi
+
+if ! grep -q "font-family: system-ui" assets/kcsg-theme-shield.css; then
+  echo "Theme shield typography baseline is missing."
+  exit 1
+fi
+
+if ! grep -q "appearance: none" assets/kcsg-theme-shield.css; then
+  echo "Theme shield button/select reset is missing."
+  exit 1
+fi
+
 if ! grep -q "grid-template-columns: 400px minmax(0, 1fr)" assets/kcsg-frontend.css; then
   echo "400px map column CSS is missing."
   exit 1
@@ -159,17 +174,23 @@ rsync -av \
   --exclude='.DS_Store' \
   ./ build/kc-streetcar-guide/
 
+cat build/kc-streetcar-guide/assets/kcsg-theme-shield.css build/kc-streetcar-guide/assets/kcsg-frontend.css > build/kc-streetcar-guide/assets/kcsg-frontend.merged.css
+mv build/kc-streetcar-guide/assets/kcsg-frontend.merged.css build/kc-streetcar-guide/assets/kcsg-frontend.css
+
+if ! grep -q "KC Streetcar Guide theme shield" build/kc-streetcar-guide/assets/kcsg-frontend.css; then
+  echo "Theme shield was not merged into release CSS."
+  exit 1
+fi
+
 cd build
 zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Adds Firebase-backed live arrivals in the selected-stop header.
-- Displays the first non-cancelled arrival per direction only.
-- Uses visitor-friendly labels: Riverfront (Northbound) and UMKC (Southbound).
-- Shows Due or under-two-minute arrivals as “Arriving soon.”
-- Refreshes/caches visible stop arrivals about every 30 seconds and falls back cleanly to the Streetcar arrivals link.
-- Keeps the safe release/update flow.
+- Adds a scoped theme shield that is prepended to the release CSS.
+- Stabilizes plugin typography, button/select appearance, link/image defaults, spacing, and box sizing inside the guide.
+- Helps the guide look consistent across different WordPress themes and builders.
+- Keeps Firebase-backed live arrivals and the safe release/update flow.
 NOTES
 )
 
