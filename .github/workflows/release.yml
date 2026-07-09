@@ -1,0 +1,83 @@
+name: Build and Release Plugin
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, without the leading v. Example: 0.7.2'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+            TAG="v${VERSION#v}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+            VERSION="${TAG#v}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Verify plugin header version
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if ! grep -q "Version: $VERSION" kc-streetcar-guide.php; then
+            echo "Plugin header version does not match release version $VERSION."
+            echo "Update kc-streetcar-guide.php before releasing."
+            exit 1
+          fi
+          if ! grep -q "const VERSION = '$VERSION'" kc-streetcar-guide.php; then
+            echo "KCSG_Plugin::VERSION does not match release version $VERSION."
+            echo "Update kc-streetcar-guide.php before releasing."
+            exit 1
+          fi
+
+      - name: Build plugin ZIP
+        shell: bash
+        run: |
+          rm -rf build
+          mkdir -p build/kc-streetcar-guide
+          rsync -av \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='build' \
+            --exclude='.DS_Store' \
+            ./ build/kc-streetcar-guide/
+          cd build
+          zip -r kc-streetcar-guide.zip kc-streetcar-guide
+
+      - name: Create or update GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" build/kc-streetcar-guide.zip --clobber
+          else
+            gh release create "$TAG" build/kc-streetcar-guide.zip \
+              --title "KC Streetcar Guide $VERSION" \
+              --notes "KC Streetcar Guide $VERSION" \
+              --target "$GITHUB_SHA" \
+              --latest
+          fi
