@@ -1,0 +1,50 @@
+/* KC Streetcar Guide layout lock
+   Appended to release CSS after theme overrides to keep the map and results column stable on desktop installs. */
+@media (min-width: 981px) {
+  .kcsg-guide {
+    --kcsg-map-standard-width: 400px;
+    --kcsg-card-standard-width: 520px;
+    --kcsg-layout-standard-gap: 24px;
+    width: auto !important;
+    max-width: calc(var(--kcsg-map-standard-width) + var(--kcsg-card-standard-width) + var(--kcsg-layout-standard-gap)) !important;
+  }
+
+  .kcsg-guide .kcsg-layout {
+    grid-template-columns: var(--kcsg-map-standard-width) var(--kcsg-card-standard-width) !important;
+    gap: var(--kcsg-layout-standard-gap) !important;
+    width: max-content !important;
+    max-width: 100% !important;
+  }
+
+  .kcsg-guide .kcsg-map-panel,
+  .kcsg-guide .kcsg-map-svg {
+    width: var(--kcsg-map-standard-width) !important;
+    max-width: var(--kcsg-map-standard-width) !important;
+  }
+
+  .kcsg-guide .kcsg-results-panel,
+  .kcsg-guide .kcsg-results-scroll,
+  .kcsg-guide .kcsg-results,
+  .kcsg-guide .kcsg-stop-feature,
+  .kcsg-guide .kcsg-stop-photo,
+  .kcsg-guide .kcsg-section-heading,
+  .kcsg-guide .kcsg-empty,
+  .kcsg-guide .kcsg-card {
+    width: var(--kcsg-card-standard-width) !important;
+    max-width: var(--kcsg-card-standard-width) !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .kcsg-guide .kcsg-results-panel,
+  .kcsg-guide .kcsg-results-scroll,
+  .kcsg-guide .kcsg-results,
+  .kcsg-guide .kcsg-stop-feature,
+  .kcsg-guide .kcsg-stop-photo,
+  .kcsg-guide .kcsg-section-heading,
+  .kcsg-guide .kcsg-empty,
+  .kcsg-guide .kcsg-card {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
