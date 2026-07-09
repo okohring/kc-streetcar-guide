@@ -1,12 +1,12 @@
 {
   "name": "KC Streetcar Guide",
   "slug": "kc-streetcar-guide",
-  "version": "0.8.15",
-  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v0.8.15/kc-streetcar-guide.zip",
+  "version": "0.9.0",
+  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v0.9.0/kc-streetcar-guide.zip",
   "details_url": "https://github.com/okohring/kc-streetcar-guide",
   "requires": "6.0",
   "tested": "6.6",
   "requires_php": "7.4",
   "description": "Interactive WordPress visitor guide for amenities near the KC Streetcar line.",
-  "changelog": "Adds a scoped theme shield so the guide uses a stable plugin baseline instead of inheriting typography, button, link, image, and spacing styles from the installing site theme."
+  "changelog": "Simplifies the category admin by hiding WordPress's default slug and description fields/columns, keeping the backend focused on category name and color."
 }
