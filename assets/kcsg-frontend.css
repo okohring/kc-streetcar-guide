@@ -422,7 +422,7 @@
   letter-spacing: -0.04em;
   padding: 0;
   background: transparent;
-  border: 0;
+  border: 0.5px #ffffff;
   border-radius: 0;
   box-shadow: none;
   -webkit-text-stroke: 0;
