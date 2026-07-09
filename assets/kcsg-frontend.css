@@ -89,8 +89,7 @@
 
 .kcsg-reset-row {
   display: none !important;
-}
-
+}\n
 .kcsg-controls {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) minmax(190px, 250px);
@@ -274,18 +273,27 @@
 }
 
 .kcsg-results-panel {
+  display: block !important;
   max-width: 100%;
   overflow: hidden;
   align-self: start;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
 }
 
 .kcsg-results-scroll {
+  display: block !important;
   max-height: 650px;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  padding: 0 6px 0 0;
+  padding: 0 6px 0 0 !important;
+  margin: 0 !important;
   scrollbar-width: thin;
+}
+
+.kcsg-results-scroll > * {
+  margin-top: 0 !important;
 }
 
 .kcsg-results-scroll::-webkit-scrollbar {
@@ -303,6 +311,13 @@
 
 .kcsg-results-heading {
   display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.kcsg-stop-feature {
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .kcsg-stop-feature[hidden] {
@@ -433,17 +448,27 @@
 }
 
 .kcsg-results {
-  display: grid;
+  display: grid !important;
   grid-template-columns: 1fr;
   gap: 12px;
+  align-content: start !important;
+  justify-content: stretch !important;
+  place-content: start stretch !important;
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.kcsg-results > :first-child {
+  margin-top: 0 !important;
 }
 
 .kcsg-card {
   position: relative;
   min-width: 0;
+  margin: 0 !important;
   border: 1px solid var(--kcsg-line);
   border-left: 5px solid var(--kcsg-category-color, var(--kcsg-blue));
   border-radius: 14px;
