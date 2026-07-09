@@ -1,0 +1,35 @@
+/* KC Streetcar Guide final theme overrides
+   This file is appended to release CSS after the component styles so aggressive themes cannot override critical UI text. */
+.kcsg-guide .kcsg-results .kcsg-card .kcsg-card-header h4,
+.kcsg-guide .kcsg-results .kcsg-card h4,
+.kcsg-guide article.kcsg-card h4 {
+  all: unset;
+  box-sizing: border-box !important;
+  display: block !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: var(--kcsg-ink, #16394f) !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif !important;
+  font-size: 16px !important;
+  font-style: normal !important;
+  font-weight: 800 !important;
+  letter-spacing: normal !important;
+  line-height: 1.2 !important;
+  text-align: left !important;
+  text-decoration: none !important;
+  text-transform: none !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+}
+
+.kcsg-guide .kcsg-results .kcsg-card .kcsg-card-header h4::before,
+.kcsg-guide .kcsg-results .kcsg-card .kcsg-card-header h4::after,
+.kcsg-guide .kcsg-results .kcsg-card h4::before,
+.kcsg-guide .kcsg-results .kcsg-card h4::after,
+.kcsg-guide article.kcsg-card h4::before,
+.kcsg-guide article.kcsg-card h4::after {
+  content: none !important;
+  display: none !important;
+}
