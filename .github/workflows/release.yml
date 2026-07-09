@@ -14,80 +14,12 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Resolve release version
-        id: version
-        shell: bash
-        run: |
-          VERSION="${{ github.event.inputs.version }}"
-          TAG="v${VERSION#v}"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Prepare release build
-        shell: bash
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
-          perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
-          python3 .github/build-release-patch.py
-
-      - name: Verify plugin header version
-        shell: bash
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          if ! grep -q "Version: $VERSION" kc-streetcar-guide.php; then
-            echo "Plugin header version does not match release version $VERSION."
-            exit 1
-          fi
-          if ! grep -q "const VERSION = '$VERSION'" kc-streetcar-guide.php; then
-            echo "KCSG_Plugin::VERSION does not match release version $VERSION."
-            exit 1
-          fi
-          if grep -q "upgrader_post_install" kc-streetcar-guide.php; then
-            echo "Unsafe post-install updater hook is still present."
-            exit 1
-          fi
-          if ! grep -q "kcsg-stop-select" assets/kcsg-frontend.js; then
-            echo "Stop select UI patch was not applied."
-            exit 1
-          fi
-          if ! grep -q "visitor guide controls UI overhaul" assets/kcsg-frontend.css; then
-            echo "UI overhaul CSS patch was not applied."
-            exit 1
-          fi
-
-      - name: Build plugin ZIP
-        shell: bash
-        run: |
-          rm -rf build
-          mkdir -p build/kc-streetcar-guide
-          rsync -av \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='build' \
-            --exclude='.DS_Store' \
-            ./ build/kc-streetcar-guide/
-          cd build
-          zip -r kc-streetcar-guide.zip kc-streetcar-guide
-
-      - name: Create or update GitHub release
-        shell: bash
+      - name: Build and release plugin
+        run: bash .github/build-and-release.sh "$VERSION"
         env:
+          VERSION: ${{ github.event.inputs.version }}
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.version.outputs.tag }}
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" build/kc-streetcar-guide.zip --clobber
-          else
-            gh release create "$TAG" build/kc-streetcar-guide.zip \
-              --title "KC Streetcar Guide $VERSION" \
-              --notes "KC Streetcar Guide $VERSION\n\n- Reworked the top controls with category and streetcar stop labels.\n- Added a streetcar stop dropdown beside the category buttons.\n- Moved reset into the category row as a red text link.\n- Tightened header spacing and aligned selected-stop photo/list content with the map.\n- Kept the 2px white stop-photo border and safe updater packaging." \
-              --target "$GITHUB_SHA" \
-              --latest
-          fi
