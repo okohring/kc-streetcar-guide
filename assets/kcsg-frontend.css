@@ -793,11 +793,11 @@
 }
 
 .kcsg-section-heading {
-  border-left: 5px solid var(--kcsg-category-color, var(--kcsg-blue));
-  border-radius: 14px;
-  background: #f7fbfe;
-  padding: 12px 14px;
-  margin: 0 !important;
+  border-left: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 0 8px !important;
 }
 
 .kcsg-section-heading h3 {
@@ -805,15 +805,12 @@
   padding: 0 !important;
   color: var(--kcsg-blue-dark);
   font-size: 18px;
+  font-weight: 800;
   line-height: 1.15;
 }
 
 .kcsg-section-heading p {
-  margin: 4px 0 0 !important;
-  padding: 0 !important;
-  color: var(--kcsg-muted);
-  font-size: 12px;
-  line-height: 1.3;
+  display: none !important;
 }
 
 .kcsg-stop-category-key {
@@ -871,6 +868,11 @@
   outline: 0;
 }
 
+.kcsg-map-panel {
+  padding-top: 60px !important;
+  max-height: 960px !important;
+}
+
 @media (max-width: 1100px) and (min-width: 701px) {
   .kcsg-layout {
     grid-template-columns: minmax(260px, min(400px, 42vw)) minmax(0, 1fr) !important;
@@ -880,5 +882,17 @@
   .kcsg-map-svg {
     width: min(400px, 42vw) !important;
     max-width: min(400px, 42vw) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .kcsg-map-panel {
+    max-height: 780px !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .kcsg-map-panel {
+    max-height: 580px !important;
   }
 }
