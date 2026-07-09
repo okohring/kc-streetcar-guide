@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Prevents horizontal side-scrolling by making the map responsive within the layout, keeps the streetcar map capped at 400 by 900, and resets the amenities scroll to the first card after stop/category changes."
+CHANGELOG="Adds category headers for full-category views, adds stop-specific category filters, and hardens card wrapping to prevent category-specific horizontal scrolling."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -50,6 +50,16 @@ if ! grep -q "function resetResultsScroll" assets/kcsg-frontend.js; then
   exit 1
 fi
 
+if ! grep -q "function renderStopCategoryKey" assets/kcsg-frontend.js; then
+  echo "Stop-specific category filters are missing from frontend JS."
+  exit 1
+fi
+
+if ! grep -q "function categoryHeaderMarkup" assets/kcsg-frontend.js; then
+  echo "Category result headers are missing from frontend JS."
+  exit 1
+fi
+
 if ! grep -q "grid-template-columns: 400px minmax(0, 1fr)" assets/kcsg-frontend.css; then
   echo "400px map column CSS is missing."
   exit 1
@@ -67,6 +77,21 @@ fi
 
 if ! grep -q "padding: 0 6px 0 0 !important" assets/kcsg-frontend.css; then
   echo "Results scroll spacing reset is missing."
+  exit 1
+fi
+
+if ! grep -q "kcsg-stop-category-key" assets/kcsg-frontend.css; then
+  echo "Stop category filter CSS is missing."
+  exit 1
+fi
+
+if ! grep -q "kcsg-section-heading" assets/kcsg-frontend.css; then
+  echo "Category heading CSS is missing."
+  exit 1
+fi
+
+if ! grep -q "overflow-wrap: anywhere" assets/kcsg-frontend.css; then
+  echo "Horizontal overflow wrapping fix is missing."
   exit 1
 fi
 
@@ -89,11 +114,10 @@ zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Keeps the streetcar map capped at 400px by 900px.
-- Prevents horizontal side-scrolling by keeping the layout responsive inside its container.
-- Keeps the amenities scroll height paired with the taller map.
-- Resets the amenities scroll to the first card after stop/category changes.
-- Keeps the safe release/update flow.
+- Adds category headers when viewing a full category such as Food or Shopping.
+- Adds stop-specific category filter pills when viewing amenities near one streetcar stop.
+- Hardens text wrapping inside cards so long food/category content cannot force horizontal side-scrolling.
+- Keeps the streetcar map capped at 400px by 900px and the safe release/update flow.
 NOTES
 )
 
