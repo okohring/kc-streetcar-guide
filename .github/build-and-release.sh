@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Adds category headers for full-category views, adds stop-specific category filters, and hardens card wrapping to prevent category-specific horizontal scrolling."
+CHANGELOG="Simplifies category result headers to plain text, adds 60px top padding above the streetcar map, and keeps stop-specific category filters plus the horizontal overflow fixes."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -60,6 +60,11 @@ if ! grep -q "function categoryHeaderMarkup" assets/kcsg-frontend.js; then
   exit 1
 fi
 
+if grep -q "All matching amenities along the streetcar route" assets/kcsg-frontend.js; then
+  echo "Old category header description is still present."
+  exit 1
+fi
+
 if ! grep -q "grid-template-columns: 400px minmax(0, 1fr)" assets/kcsg-frontend.css; then
   echo "400px map column CSS is missing."
   exit 1
@@ -67,6 +72,11 @@ fi
 
 if ! grep -q "height: 900px !important" assets/kcsg-frontend.css; then
   echo "900px map SVG height is missing."
+  exit 1
+fi
+
+if ! grep -q "padding-top: 60px !important" assets/kcsg-frontend.css; then
+  echo "Streetcar map top padding is missing."
   exit 1
 fi
 
@@ -114,10 +124,11 @@ zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Adds category headers when viewing a full category such as Food or Shopping.
-- Adds stop-specific category filter pills when viewing amenities near one streetcar stop.
-- Hardens text wrapping inside cards so long food/category content cannot force horizontal side-scrolling.
-- Keeps the streetcar map capped at 400px by 900px and the safe release/update flow.
+- Simplifies category result headers to plain text only.
+- Adds 60px top padding above the streetcar map/SVG.
+- Keeps stop-specific category filter pills when viewing one streetcar stop.
+- Keeps the horizontal overflow fixes for long category/card content.
+- Keeps the safe release/update flow.
 NOTES
 )
 
