@@ -89,7 +89,8 @@
 
 .kcsg-reset-row {
   display: none !important;
-}\n
+}
+
 .kcsg-controls {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) minmax(190px, 250px);
