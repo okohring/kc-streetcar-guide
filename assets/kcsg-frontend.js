@@ -50,6 +50,7 @@
 
     var state = {
       category: 'all',
+      stopCategory: 'all',
       stop: null,
       mode: 'all'
     };
@@ -61,6 +62,7 @@
     var resetRow = guide.querySelector('.kcsg-reset-row');
     var categoryKey = guide.querySelector('.kcsg-category-key');
     var stopSelect = null;
+    var stopCategoryKey = null;
     var results = guide.querySelector('[data-kcsg-results]');
     var resultsScroll = guide.querySelector('[data-kcsg-results-scroll]');
     var stopFeature = guide.querySelector('[data-kcsg-stop-feature]');
@@ -76,7 +78,14 @@
       return category ? category.name : 'Amenities';
     }
 
+    function getCategoryBySlug(slug) {
+      return (data.categories || []).find(function (item) {
+        return item.slug === slug;
+      }) || null;
+    }
+
     function buildControlBar() {
+      stopCategoryKey = guide.querySelector('[data-kcsg-stop-category-key]');
       if (!categoryKey || categoryKey.closest('.kcsg-controls')) return;
 
       var controls = document.createElement('div');
@@ -122,6 +131,12 @@
       stopGroup.appendChild(stopLabelNode);
       stopGroup.appendChild(stopSelect);
       controls.appendChild(stopGroup);
+
+      stopCategoryKey = document.createElement('div');
+      stopCategoryKey.className = 'kcsg-stop-category-key';
+      stopCategoryKey.setAttribute('data-kcsg-stop-category-key', '');
+      stopCategoryKey.hidden = true;
+      controls.parentNode.insertBefore(stopCategoryKey, controls.nextSibling);
     }
 
     function setActiveButton(slug) {
@@ -193,13 +208,37 @@
       });
     }
 
+    function currentStopCategories(stopId) {
+      var seen = {};
+      (data.amenities || []).forEach(function (amenity) {
+        if (amenity.stop !== stopId) return;
+        (amenity.categories || []).forEach(function (category) {
+          if (category.slug) {
+            seen[category.slug] = true;
+          }
+        });
+      });
+
+      return (data.categories || []).filter(function (category) {
+        return !!seen[category.slug];
+      });
+    }
+
     function currentFilteredAmenities() {
       var amenities = data.amenities || [];
 
       if (state.mode === 'stop' && state.stop) {
-        return amenities.filter(function (amenity) {
+        var stopAmenities = amenities.filter(function (amenity) {
           return amenity.stop === state.stop;
         });
+
+        if (state.stopCategory && state.stopCategory !== 'all') {
+          return stopAmenities.filter(function (amenity) {
+            return amenityMatchesCategory(amenity, state.stopCategory);
+          });
+        }
+
+        return stopAmenities;
       }
 
       if (state.mode === 'category') {
@@ -351,15 +390,70 @@
       stopFeature.innerHTML = '';
     }
 
+    function renderStopCategoryKey() {
+      if (!stopCategoryKey) return;
+
+      if (state.mode !== 'stop' || !state.stop) {
+        stopCategoryKey.hidden = true;
+        stopCategoryKey.innerHTML = '';
+        return;
+      }
+
+      var categories = currentStopCategories(state.stop);
+      if (!categories.length) {
+        stopCategoryKey.hidden = true;
+        stopCategoryKey.innerHTML = '';
+        return;
+      }
+
+      var allActive = !state.stopCategory || state.stopCategory === 'all';
+      var markup = '' +
+        '<span class="kcsg-stop-category-label">Filter ' + esc(stopLabel(state.stop)) + '</span>' +
+        '<div class="kcsg-stop-category-buttons">' +
+          '<button type="button" class="kcsg-stop-category-button' + (allActive ? ' is-active' : '') + '" data-kcsg-stop-category="all">All</button>';
+
+      categories.forEach(function (category) {
+        var color = cssColor(category.color, '#008bd2');
+        var active = state.stopCategory === category.slug;
+        markup += '<button type="button" class="kcsg-stop-category-button' + (active ? ' is-active' : '') + '" data-kcsg-stop-category="' + esc(category.slug) + '" style="--kcsg-category-color:' + esc(color) + ';">' + esc(category.name) + '</button>';
+      });
+
+      markup += '</div>';
+      stopCategoryKey.innerHTML = markup;
+      stopCategoryKey.hidden = false;
+      attachStopCategoryEvents();
+    }
+
+    function attachStopCategoryEvents() {
+      if (!stopCategoryKey) return;
+
+      Array.prototype.slice.call(stopCategoryKey.querySelectorAll('[data-kcsg-stop-category]')).forEach(function (button) {
+        button.addEventListener('click', function () {
+          state.stopCategory = button.getAttribute('data-kcsg-stop-category') || 'all';
+          state.category = 'all';
+          state.mode = 'stop';
+          render();
+        });
+      });
+    }
+
     function resetResultsScroll() {
       if (!resultsScroll) return;
 
       var apply = function () {
-        var firstCard = results ? results.querySelector('.kcsg-card') : null;
-        var targetTop = 0;
+        var target = null;
 
-        if (firstCard) {
-          targetTop = Math.max(0, firstCard.offsetTop - resultsScroll.offsetTop);
+        if (state.mode === 'category' && state.category !== 'all') {
+          target = results ? results.querySelector('.kcsg-section-heading') : null;
+        }
+
+        if (!target) {
+          target = results ? results.querySelector('.kcsg-card') : null;
+        }
+
+        var targetTop = 0;
+        if (target) {
+          targetTop = Math.max(0, target.offsetTop - resultsScroll.offsetTop);
         }
 
         resultsScroll.scrollTop = targetTop;
@@ -376,6 +470,7 @@
       if (!stopId) return;
       state.stop = stopId;
       state.category = 'all';
+      state.stopCategory = 'all';
       state.mode = 'stop';
       render();
     }
@@ -404,6 +499,22 @@
         '</article>';
     }
 
+    function categoryHeaderMarkup() {
+      if (state.mode !== 'category' || !state.category || state.category === 'all') {
+        return '';
+      }
+
+      var category = getCategoryBySlug(state.category);
+      var color = cssColor(category && category.color, '#008bd2');
+      var label = getCategoryLabel(state.category);
+
+      return '' +
+        '<div class="kcsg-section-heading" style="--kcsg-category-color:' + esc(color) + ';">' +
+          '<h3>' + esc(label) + '</h3>' +
+          '<p>All matching amenities along the streetcar route.</p>' +
+        '</div>';
+    }
+
     function render() {
       var filtered = currentFilteredAmenities();
       setActiveButton(state.mode === 'category' ? state.category : 'all');
@@ -411,6 +522,7 @@
       setStopSelect(state.mode === 'stop' ? state.stop : '');
       updateStopMuting();
       updateStopFeature();
+      renderStopCategoryKey();
 
       if (title) {
         if (state.mode === 'stop' && state.stop) {
@@ -426,13 +538,15 @@
         count.textContent = filtered.length === 1 ? '1 result' : filtered.length + ' results';
       }
 
+      var headerMarkup = categoryHeaderMarkup();
+
       if (!filtered.length) {
-        results.innerHTML = '<div class="kcsg-empty">No amenities match this selection yet.</div>';
+        results.innerHTML = headerMarkup + '<div class="kcsg-empty">No amenities match this selection yet.</div>';
         resetResultsScroll();
         return;
       }
 
-      results.innerHTML = filtered.map(cardTemplate).join('');
+      results.innerHTML = headerMarkup + filtered.map(cardTemplate).join('');
       attachResultHoverEvents();
       resetResultsScroll();
     }
@@ -484,6 +598,7 @@
       button.addEventListener('click', function () {
         var category = button.getAttribute('data-kcsg-category') || 'all';
         state.category = category;
+        state.stopCategory = 'all';
         state.stop = null;
         state.mode = category === 'all' ? 'all' : 'category';
         render();
@@ -498,6 +613,7 @@
           return;
         }
         state.category = 'all';
+        state.stopCategory = 'all';
         state.stop = null;
         state.mode = 'all';
         render();
