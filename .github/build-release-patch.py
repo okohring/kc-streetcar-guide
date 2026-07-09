@@ -89,7 +89,7 @@ def patch_js() -> None:
 
       var placeholder = document.createElement('option');
       placeholder.value = '';
-      placeholder.textContent = 'Select streetcar stop';
+      placeholder.textContent = 'Choose streetcar stop';
       stopSelect.appendChild(placeholder);
 
       Object.keys(data.stops || {}).forEach(function (stopId) {
@@ -198,12 +198,21 @@ def patch_css() -> None:
 }
 
 /* Release tweak: visitor guide controls UI overhaul. */
+.kcsg-guide {
+  gap: 2px !important;
+  row-gap: 2px !important;
+}
+
 .kcsg-header h2 {
-  margin-bottom: 0 !important;
+  margin: 0 !important;
+  font-size: clamp(18px, 2vw, 22px) !important;
+  line-height: 1.05 !important;
 }
 
 .kcsg-header p {
-  margin-top: 0 !important;
+  margin: 0 !important;
+  font-size: 11px !important;
+  line-height: 1.15 !important;
 }
 
 .kcsg-reset-row {
@@ -212,12 +221,12 @@ def patch_css() -> None:
 
 .kcsg-controls {
   display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
-  align-items: end;
-  column-gap: 18px;
-  row-gap: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(145px, 162px);
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 6px;
   width: 100%;
-  margin: 10px 0 12px !important;
+  margin: 8px 0 10px !important;
   padding: 0 !important;
 }
 
@@ -226,63 +235,41 @@ def patch_css() -> None:
 }
 
 .kcsg-control-label {
-  display: block;
-  margin: 0 0 6px !important;
-  padding: 0 !important;
-  color: var(--kcsg-muted);
-  font-size: 11px;
-  font-weight: 850;
-  line-height: 1;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  display: none !important;
 }
 
 .kcsg-category-key {
   align-items: center;
+  gap: 4px !important;
   margin: 0 !important;
+  padding: 0 !important;
+}
+
+.kcsg-category-button {
+  padding: 5px 8px !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
 }
 
 .kcsg-category-key .kcsg-reset {
-  appearance: none;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  color: #d6422d !important;
-  padding: 0 0 0 2px !important;
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1;
-  text-transform: lowercase;
-  text-decoration: none !important;
-}
-
-.kcsg-category-key .kcsg-reset:hover,
-.kcsg-category-key .kcsg-reset:focus-visible {
-  background: transparent !important;
-  border-color: transparent !important;
-  color: #a82f20 !important;
-  transform: none !important;
-  text-decoration: underline !important;
-  text-underline-offset: 3px;
-  outline: 0;
+  display: none !important;
 }
 
 .kcsg-stop-select {
-  appearance: none;
+  appearance: auto;
   width: 100%;
-  min-height: 36px;
-  border: 1px solid var(--kcsg-line);
-  border-radius: 12px;
+  min-height: 23px;
+  border: 1px solid #cbd7df;
+  border-radius: 0;
   background-color: #ffffff;
-  color: var(--kcsg-blue-dark);
+  color: var(--kcsg-ink);
   cursor: pointer;
   font: inherit;
-  font-size: 14px;
-  font-weight: 650;
-  line-height: 1.2;
-  padding: 8px 36px 8px 11px;
-  box-shadow: 0 6px 14px rgba(9, 60, 87, 0.04);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.1;
+  padding: 3px 6px;
+  box-shadow: none;
 }
 
 .kcsg-stop-select:hover,
@@ -292,8 +279,26 @@ def patch_css() -> None:
 }
 
 .kcsg-layout {
+  grid-template-columns: minmax(105px, 138px) minmax(0, 1fr) !important;
+  gap: 12px !important;
   align-items: start !important;
   margin-top: 0 !important;
+}
+
+.kcsg-map-panel {
+  justify-content: center !important;
+  max-height: 430px !important;
+  top: 0 !important;
+}
+
+.kcsg-map-svg {
+  height: 430px !important;
+  max-height: 430px !important;
+}
+
+.kcsg-results-scroll {
+  max-height: 430px !important;
+  padding-right: 0 !important;
 }
 
 .kcsg-guide.is-stop-with-photo .kcsg-results-heading {
@@ -301,12 +306,111 @@ def patch_css() -> None:
 }
 
 .kcsg-stop-photo {
-  margin-top: 0 !important;
+  margin: 0 0 10px !important;
+  border-radius: 10px !important;
+}
+
+.kcsg-stop-photo img {
+  height: clamp(120px, 22vw, 150px) !important;
+}
+
+.kcsg-stop-photo figcaption {
+  left: 10px !important;
+  bottom: 10px !important;
+  font-size: clamp(20px, 2.5vw, 28px) !important;
+}
+
+.kcsg-stop-photo.has-live-arrivals figcaption {
+  bottom: 34px !important;
+}
+
+.kcsg-live-arrivals {
+  left: 10px !important;
+  right: 10px !important;
+  bottom: 9px !important;
+}
+
+.kcsg-live-kicker {
+  font-size: 8px !important;
+}
+
+.kcsg-results {
+  gap: 10px !important;
+}
+
+.kcsg-card {
+  border-radius: 10px !important;
+  padding: 10px !important;
+  box-shadow: 0 7px 16px rgba(9, 60, 87, 0.05) !important;
+}
+
+.kcsg-card-header {
+  margin-bottom: 7px !important;
+}
+
+.kcsg-card h4 {
+  font-size: 13px !important;
+  line-height: 1.15 !important;
+}
+
+.kcsg-category-pill {
+  font-size: 9px !important;
+  padding: 4px 6px !important;
+}
+
+.kcsg-link {
+  width: 22px !important;
+  height: 22px !important;
+}
+
+.kcsg-link svg {
+  width: 13px !important;
+  height: 13px !important;
+}
+
+.kcsg-meta {
+  gap: 5px !important;
+  margin: 7px 0 !important;
+}
+
+.kcsg-meta span {
+  border-radius: 7px !important;
+  padding: 5px 6px !important;
+  font-size: 10px !important;
+  line-height: 1.18 !important;
+}
+
+.kcsg-meta strong {
+  font-size: 9px !important;
+  margin-bottom: 1px !important;
+}
+
+.kcsg-description {
+  margin-top: 6px !important;
+  font-size: 10px !important;
+  line-height: 1.35 !important;
 }
 
 @media (max-width: 760px) {
   .kcsg-controls {
     grid-template-columns: 1fr;
+  }
+
+  .kcsg-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .kcsg-map-panel,
+  .kcsg-map-svg {
+    max-height: 520px !important;
+  }
+
+  .kcsg-map-svg {
+    height: min(520px, 76vh) !important;
+  }
+
+  .kcsg-results-scroll {
+    max-height: none !important;
   }
 }
 '''
