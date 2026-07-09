@@ -8,7 +8,7 @@
   --kcsg-card: #ffffff;
   --kcsg-highlight: #ffb23f;
   width: 100% !important;
-  max-width: 100% !important;
+  max-width: 920px !important;
   min-width: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -22,10 +22,13 @@
   outline: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 5px !important;
-  row-gap: 5px !important;
-  justify-content: flex-start !important;
-  align-content: flex-start !important;
+  gap: 0 !important;
+  row-gap: 0 !important;
+}
+
+.kcsg-guide,
+.kcsg-guide * {
+  box-sizing: border-box;
 }
 
 .kcsg-guide > * {
@@ -33,18 +36,11 @@
   margin-bottom: 0 !important;
 }
 
-
-.kcsg-guide,
-.kcsg-guide * {
-  box-sizing: border-box;
-}
-
 .kcsg-guide::before,
 .kcsg-guide::after {
   display: none !important;
 }
 
-/* Flatten common shortcode / builder wrappers that add a visible box around the guide. */
 .wp-block-shortcode:has(.kcsg-guide),
 .wp-block-group:has(.kcsg-guide),
 .wp-block-columns:has(.kcsg-guide),
@@ -64,8 +60,10 @@
 }
 
 .kcsg-header {
-  display: block;
-  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  margin: 0 0 8px !important;
   padding: 0 !important;
   background: transparent !important;
   border: 0 !important;
@@ -73,10 +71,10 @@
 }
 
 .kcsg-header h2 {
-  margin: 0 0 2px !important;
+  margin: 0 !important;
   padding: 0 !important;
-  font-size: clamp(22px, 2.4vw, 32px);
-  line-height: 1.05;
+  font-size: clamp(20px, 2.1vw, 26px) !important;
+  line-height: 1.05 !important;
   color: var(--kcsg-blue-dark);
 }
 
@@ -85,21 +83,45 @@
   padding: 0 !important;
   max-width: 720px;
   color: var(--kcsg-muted);
-  font-size: 15px;
-  line-height: 1.25;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
 }
 
 .kcsg-reset-row {
-  display: flex;
-  justify-content: flex-start;
-  margin: 0 !important;
+  display: none !important;
+}
+
+.kcsg-controls {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 250px);
+  gap: 10px 18px;
+  align-items: center;
+  width: 100%;
+  margin: 0 0 14px !important;
   padding: 0 !important;
 }
 
-.kcsg-header + .kcsg-reset-row,
-.kcsg-reset-row + .kcsg-category-key,
-.kcsg-category-key + .kcsg-layout {
-  margin-top: 0 !important;
+.kcsg-control-group {
+  min-width: 0;
+}
+
+.kcsg-control-label,
+.screen-reader-text.kcsg-control-label {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(1px, 1px, 1px, 1px) !important;
+  white-space: nowrap !important;
+}
+
+.kcsg-category-key {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .kcsg-reset,
@@ -111,48 +133,54 @@
   color: var(--kcsg-category-color, var(--kcsg-blue-dark)) !important;
   cursor: pointer;
   font: inherit;
-  font-size: 15px;
-  font-weight: 750;
+  font-size: 12px !important;
+  font-weight: 800;
   line-height: 1;
   margin: 0 !important;
+  padding: 6px 9px !important;
   transition: background 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
 
-.kcsg-reset {
-  --kcsg-category-color: var(--kcsg-blue);
-  padding: 6px 10px;
-  white-space: nowrap;
-}
-
-.kcsg-category-key {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 1px 0 3px !important;
-  padding: 0 !important;
-}
-
-.kcsg-category-button {
-  padding: 7px 12px;
-}
-
-.kcsg-reset:hover,
 .kcsg-category-button:hover,
+.kcsg-category-button:focus-visible,
 .kcsg-category-button.is-active {
   background: var(--kcsg-category-color, var(--kcsg-blue)) !important;
   border-color: var(--kcsg-category-color, var(--kcsg-blue)) !important;
   color: #ffffff !important;
   transform: translateY(-1px);
+  outline: 0;
 }
 
 .kcsg-category-button[data-kcsg-category="all"] {
   --kcsg-category-color: var(--kcsg-blue);
 }
 
+.kcsg-stop-select {
+  width: 100%;
+  min-height: 28px;
+  border: 1px solid #cbd7df;
+  border-radius: 0;
+  background-color: #ffffff;
+  color: var(--kcsg-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.1;
+  padding: 4px 8px;
+  box-shadow: none;
+}
+
+.kcsg-stop-select:hover,
+.kcsg-stop-select:focus-visible {
+  border-color: var(--kcsg-blue);
+  outline: 0;
+}
+
 .kcsg-layout {
   display: grid;
-  grid-template-columns: minmax(170px, 235px) minmax(0, 1fr);
-  gap: clamp(10px, 2vw, 24px);
+  grid-template-columns: minmax(120px, 170px) minmax(0, 1fr);
+  gap: clamp(14px, 2.6vw, 26px);
   align-items: start;
   width: 100%;
   max-width: 100%;
@@ -177,7 +205,7 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  max-height: 800px;
+  max-height: 620px;
   overflow: visible;
   position: sticky;
   top: 20px;
@@ -186,9 +214,9 @@
 .kcsg-map-svg {
   display: block;
   width: auto;
-  height: 800px;
+  height: 620px;
   max-width: 100%;
-  max-height: 800px;
+  max-height: 620px;
   overflow: visible;
 }
 
@@ -207,7 +235,6 @@
   pointer-events: none;
 }
 
-/* Stop labels are true SVG text in the current map asset, so we can style them cleanly. */
 .kcsg-map-svg #stops > g .stop-label {
   font-family: Arial, Helvetica, sans-serif !important;
   font-size: 12.4px !important;
@@ -253,7 +280,7 @@
 }
 
 .kcsg-results-scroll {
-  max-height: 800px;
+  max-height: 620px;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
@@ -288,7 +315,7 @@
   margin: 0 !important;
   padding: 0 !important;
   color: var(--kcsg-blue-dark);
-  font-size: clamp(20px, 2vw, 26px);
+  font-size: clamp(18px, 2vw, 24px);
   line-height: 1.15;
 }
 
@@ -296,8 +323,12 @@
   margin: 0 !important;
   padding: 0 !important;
   color: var(--kcsg-muted);
-  font-size: 13px;
+  font-size: 12px;
   white-space: nowrap;
+}
+
+.kcsg-guide.is-stop-with-photo .kcsg-results-heading {
+  display: none !important;
 }
 
 .kcsg-stop-feature[hidden] {
@@ -306,12 +337,12 @@
 
 .kcsg-stop-photo {
   position: relative;
-  margin: 0 0 12px !important;
-  border-radius: 16px;
+  margin: 0 0 14px !important;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid var(--kcsg-line);
+  border: 2px solid #ffffff !important;
   background: #ffffff;
-  box-shadow: 0 8px 18px rgba(9, 60, 87, 0.05);
+  box-shadow: 0 8px 18px rgba(9, 60, 87, 0.07);
 }
 
 .kcsg-stop-photo::after {
@@ -334,7 +365,7 @@
   z-index: 0;
   display: block;
   width: 100%;
-  height: clamp(160px, 24vw, 260px);
+  height: clamp(155px, 21vw, 230px);
   object-fit: cover;
   transform: scale(1);
   transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -364,7 +395,7 @@
   bottom: 14px;
   margin: 0;
   color: var(--kcsg-blue-dark);
-  font-size: clamp(24px, 3vw, 36px);
+  font-size: clamp(24px, 3vw, 34px);
   font-weight: 500;
   line-height: 0.98;
   letter-spacing: -0.04em;
@@ -378,9 +409,8 @@
   text-shadow: none;
 }
 
-
 .kcsg-stop-photo.has-live-arrivals figcaption {
-  bottom: 48px;
+  bottom: 46px;
 }
 
 .kcsg-live-arrivals {
@@ -423,54 +453,14 @@
   font-weight: 650;
 }
 
-.kcsg-live-status[hidden] {
-  display: none !important;
-}
-
+.kcsg-live-status[hidden],
 .kcsg-live-arrivals.has-fallback .kcsg-live-status {
   display: none !important;
 }
 
-.kcsg-live-link {
-  flex: 0 0 auto;
-  display: inline-grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  margin-left: auto;
-  border-radius: 999px;
-  color: var(--kcsg-blue-dark);
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(11, 79, 115, 0.14);
-  text-decoration: none !important;
-  transition: transform 160ms ease, background 160ms ease;
-}
-
-.kcsg-live-link:hover,
-.kcsg-live-link:focus-visible {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.95);
-}
-
-.kcsg-live-link svg {
-  display: block;
-  width: 14px;
-  height: 14px;
-  fill: currentColor;
-}
-
-.kcsg-guide.is-stop-with-photo .kcsg-results-heading h3 {
-  display: none !important;
-}
-
-.kcsg-guide.is-stop-with-photo .kcsg-results-heading {
-  justify-content: flex-end;
-  margin-bottom: 8px !important;
-}
-
 .kcsg-results {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  grid-template-columns: 1fr;
   gap: 12px;
   width: 100%;
   max-width: 100%;
@@ -632,37 +622,43 @@
 }
 
 @media (max-width: 900px) {
+  .kcsg-guide {
+    max-width: 100% !important;
+  }
+
   .kcsg-layout {
-    grid-template-columns: minmax(150px, 210px) minmax(0, 1fr);
+    grid-template-columns: minmax(110px, 150px) minmax(0, 1fr);
+    gap: 14px;
   }
 
   .kcsg-map-panel,
-  .kcsg-map-svg {
-    max-height: 760px;
-  }
-
-  .kcsg-map-svg {
-    height: 760px;
-  }
-
+  .kcsg-map-svg,
   .kcsg-results-scroll {
-    max-height: 760px;
+    max-height: 560px;
+  }
+
+  .kcsg-map-svg {
+    height: 560px;
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 700px) {
+  .kcsg-controls {
+    grid-template-columns: 1fr;
+  }
+
   .kcsg-layout {
     grid-template-columns: 1fr;
   }
 
   .kcsg-map-panel {
     justify-content: flex-start;
-    max-height: 720px;
+    max-height: 520px;
     position: static;
   }
 
   .kcsg-map-svg {
-    height: min(720px, 80vh);
+    height: min(520px, 76vh);
   }
 
   .kcsg-results-scroll {
@@ -673,13 +669,8 @@
 }
 
 @media (max-width: 560px) {
-  .kcsg-results-heading,
   .kcsg-card-header {
     display: block;
-  }
-
-  .kcsg-results-heading p {
-    margin-top: 4px !important;
   }
 
   .kcsg-card-actions {
@@ -695,7 +686,6 @@
   }
 }
 
-/* Small landmark labels near Crossroads. */
 .kcsg-map-svg .kcsg-map-amenity-label {
   font-family: Arial, Helvetica, sans-serif !important;
   font-size: 6.8px !important;
