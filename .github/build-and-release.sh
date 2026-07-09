@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Adds a final scoped override for amenity card titles so aggressive theme heading styles cannot change their typography, spacing, casing, or pseudo-elements."
+CHANGELOG="Simplifies the category admin by hiding WordPress's default slug and description fields/columns, keeping the backend focused on category name and color."
 
 perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -22,6 +22,60 @@ php = Path('kc-streetcar-guide.php')
 content = php.read_text()
 content = content.replace("        add_filter('upgrader_post_install', array($this, 'rename_release_folder'), 10, 3);\n", "")
 content = re.sub(r"\n    public function rename_release_folder\(\$response, \$hook_extra, \$result\) \{.*?\n    \}\n", "\n", content, flags=re.S)
+
+category_columns_old = """    public function category_columns($columns) {
+        $new_columns = array();
+
+        foreach ($columns as $key => $label) {
+"""
+category_columns_new = """    public function category_columns($columns) {
+        unset($columns['slug'], $columns['description']);
+
+        $new_columns = array();
+
+        foreach ($columns as $key => $label) {
+"""
+if category_columns_old in content:
+    content = content.replace(category_columns_old, category_columns_new, 1)
+
+admin_styles_old = """    public function admin_styles($hook) {
+        global $post_type;
+
+        $is_amenity_screen = ($post_type === self::CPT);
+        $is_stop_photo_page = isset($_GET['page']) && sanitize_key(wp_unslash($_GET['page'])) === 'kcsg-stop-photos';
+
+        if (!$is_amenity_screen && !$is_stop_photo_page) {
+            return;
+        }
+"""
+admin_styles_new = """    public function admin_styles($hook) {
+        global $post_type, $taxonomy;
+
+        $current_taxonomy = $taxonomy ? $taxonomy : (isset($_GET['taxonomy']) ? sanitize_key(wp_unslash($_GET['taxonomy'])) : '');
+        $is_amenity_screen = ($post_type === self::CPT);
+        $is_category_screen = ($current_taxonomy === self::TAX);
+        $is_stop_photo_page = isset($_GET['page']) && sanitize_key(wp_unslash($_GET['page'])) === 'kcsg-stop-photos';
+
+        if (!$is_amenity_screen && !$is_category_screen && !$is_stop_photo_page) {
+            return;
+        }
+"""
+if admin_styles_old in content:
+    content = content.replace(admin_styles_old, admin_styles_new, 1)
+
+admin_css_anchor = """        wp_add_inline_style('wp-admin', '
+            .kcsg-admin-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 18px; }
+"""
+admin_css_replacement = """        wp_add_inline_style('wp-admin', '
+            body.taxonomy-kcsg_category .term-slug-wrap,
+            body.taxonomy-kcsg_category .term-description-wrap,
+            body.taxonomy-kcsg_category .column-slug,
+            body.taxonomy-kcsg_category .column-description { display: none !important; }
+            .kcsg-admin-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 18px; }
+"""
+if admin_css_anchor in content:
+    content = content.replace(admin_css_anchor, admin_css_replacement, 1)
+
 php.write_text(content)
 PY
 
@@ -37,6 +91,26 @@ fi
 
 if grep -q "upgrader_post_install" kc-streetcar-guide.php; then
   echo "Unsafe post-install updater hook is still present."
+  exit 1
+fi
+
+if ! grep -q "unset(\$columns\['slug'\], \$columns\['description'\])" kc-streetcar-guide.php; then
+  echo "Category slug/description columns are still visible."
+  exit 1
+fi
+
+if ! grep -q "is_category_screen" kc-streetcar-guide.php; then
+  echo "Category admin screen detection is missing."
+  exit 1
+fi
+
+if ! grep -q "term-slug-wrap" kc-streetcar-guide.php; then
+  echo "Category slug field hiding CSS is missing."
+  exit 1
+fi
+
+if ! grep -q "term-description-wrap" kc-streetcar-guide.php; then
+  echo "Category description field hiding CSS is missing."
   exit 1
 fi
 
@@ -207,9 +281,10 @@ zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Adds a final scoped override for amenity card titles.
-- Resets amenity title h4s so theme heading fonts, casing, spacing, and pseudo-elements cannot leak in.
-- Keeps the broader theme shield, Firebase-backed live arrivals, and the safe release/update flow.
+- Hides WordPress default Category slug and description fields from the category admin screens.
+- Removes slug and description columns from the category list table.
+- Keeps category name and color as the useful editable fields.
+- Keeps the broader theme shield, amenity title override, Firebase-backed live arrivals, and safe release/update flow.
 NOTES
 )
 
