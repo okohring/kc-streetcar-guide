@@ -95,9 +95,64 @@
 
   .kcsg-guide .kcsg-stop-category-key,
   .kcsg-guide .kcsg-map-panel,
-  .kcsg-guide .kcsg-map-svg,
-  .kcsg-guide .kcsg-stop-feature {
+  .kcsg-guide .kcsg-map-svg {
     display: none !important;
+  }
+
+  .kcsg-guide .kcsg-stop-feature[hidden] {
+    display: none !important;
+  }
+
+  .kcsg-guide .kcsg-stop-feature:not([hidden]) {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 0 14px !important;
+  }
+
+  .kcsg-guide .kcsg-stop-feature .kcsg-stop-photo {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 0 14px !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .kcsg-guide .kcsg-stop-feature .kcsg-stop-photo img,
+  .kcsg-guide .kcsg-stop-feature .kcsg-stop-photo::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  .kcsg-guide .kcsg-stop-feature .kcsg-stop-photo figcaption,
+  .kcsg-guide .kcsg-stop-feature .kcsg-stop-photo.has-live-arrivals figcaption {
+    position: static !important;
+    display: block !important;
+    max-width: 100% !important;
+    margin: 0 0 6px !important;
+    padding: 0 !important;
+    color: var(--kcsg-blue-dark, #0b4f73) !important;
+    font-size: clamp(24px, 8vw, 34px) !important;
+    font-weight: 500 !important;
+    line-height: 0.98 !important;
+    letter-spacing: -0.04em !important;
+  }
+
+  .kcsg-guide .kcsg-stop-feature .kcsg-live-arrivals {
+    position: static !important;
+    display: grid !important;
+    gap: 2px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: var(--kcsg-blue-dark, #0b4f73) !important;
   }
 
   .kcsg-guide .kcsg-layout {
