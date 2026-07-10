@@ -6,15 +6,15 @@
     --kcsg-card-standard-width: 520px;
     --kcsg-results-scroll-gutter: 24px;
     --kcsg-layout-standard-gap: 24px;
-    width: auto !important;
+    width: 100% !important;
     max-width: calc(var(--kcsg-map-standard-width) + var(--kcsg-card-standard-width) + var(--kcsg-results-scroll-gutter) + var(--kcsg-layout-standard-gap)) !important;
   }
 
   .kcsg-guide .kcsg-layout {
-    grid-template-columns: var(--kcsg-map-standard-width) calc(var(--kcsg-card-standard-width) + var(--kcsg-results-scroll-gutter)) !important;
+    grid-template-columns: var(--kcsg-map-standard-width) minmax(0, calc(var(--kcsg-card-standard-width) + var(--kcsg-results-scroll-gutter))) !important;
     gap: var(--kcsg-layout-standard-gap) !important;
-    width: max-content !important;
-    max-width: 100% !important;
+    width: 100% !important;
+    max-width: calc(var(--kcsg-map-standard-width) + var(--kcsg-card-standard-width) + var(--kcsg-results-scroll-gutter) + var(--kcsg-layout-standard-gap)) !important;
   }
 
   .kcsg-guide .kcsg-map-panel,
@@ -25,8 +25,9 @@
 
   .kcsg-guide .kcsg-results-panel,
   .kcsg-guide .kcsg-results-scroll {
-    width: calc(var(--kcsg-card-standard-width) + var(--kcsg-results-scroll-gutter)) !important;
+    width: 100% !important;
     max-width: calc(var(--kcsg-card-standard-width) + var(--kcsg-results-scroll-gutter)) !important;
+    min-width: 0 !important;
   }
 
   .kcsg-guide .kcsg-results-scroll {
@@ -37,13 +38,19 @@
   }
 
   .kcsg-guide .kcsg-results,
-  .kcsg-guide .kcsg-stop-feature,
+  .kcsg-guide .kcsg-stop-feature {
+    width: 100% !important;
+    max-width: var(--kcsg-card-standard-width) !important;
+    min-width: 0 !important;
+  }
+
   .kcsg-guide .kcsg-stop-photo,
   .kcsg-guide .kcsg-section-heading,
   .kcsg-guide .kcsg-empty,
   .kcsg-guide .kcsg-card {
-    width: var(--kcsg-card-standard-width) !important;
-    max-width: var(--kcsg-card-standard-width) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
   }
 }
 
@@ -58,5 +65,6 @@
   .kcsg-guide .kcsg-card {
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
   }
 }
