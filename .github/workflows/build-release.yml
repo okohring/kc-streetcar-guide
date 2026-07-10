@@ -18,88 +18,17 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Patch release builder for simplified featured UI
+      - name: Keep admin checkboxes normal width
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          builder = Path('.github/build-and-release.sh')
-          script = builder.read_text()
-
-          script = script.replace(
-              'Adds featured amenities, configurable featured locations, advanced font controls, entity decoding for titles, and keeps the map-link-only amenity workflow plus bulk stop photo crop tools.',
-              'Keeps executive-pick amenity toggles, advanced font controls, entity decoding, map-link-only amenities, and bulk stop photo crop tools.'
-          )
-          script = script.replace(
-              '- Adds Advanced Settings with configurable Featured Locations, including show/hide, label, assigned streetcar stop, Google Maps URL, and optional website URL.\n',
-              ''
-          )
-
-          php_cleanup = r'''
-# Remove Featured Locations UI/cards from the release and keep only amenity-level Executive Picks.
-content = content.replace("\n            'featuredLocations' => self::get_featured_locations(),", "")
-content = re.sub(r"\n\s*\$featured_locations = self::get_featured_locations\(\);\n\s*\$stops = self::stops\(\);\n\s*for \(\$i = count\(\$featured_locations\);.*?\n\s*\}\n", "\n", content, flags=re.S)
-content = re.sub(r"\n\s*<section class=\"kcsg-advanced-card\">\s*\n\s*<h2><\?php esc_html_e\('Featured Locations'.*?</section>\s*", "\n", content, flags=re.S)
-content = re.sub(r"\n\s*\$incoming_locations = isset\(\$_POST\['kcsg_featured_locations'\]\).*?update_option\('kcsg_featured_locations', \$locations, false\);\n", "\n", content, flags=re.S)
-content = content.replace(
-    ".kcsg-admin-field input, .kcsg-admin-field select, .kcsg-admin-field textarea { width: 100%; max-width: 100%; }",
-    ".kcsg-admin-field input:not([type=checkbox]), .kcsg-admin-field select, .kcsg-admin-field textarea { width: 100%; max-width: 100%; }"
-)
-content = content.replace(
-    ".kcsg-featured-toggle { align-self: center; margin-bottom: 0 !important; }",
-    ".kcsg-featured-toggle { align-self: center; margin-bottom: 0 !important; }\n            .kcsg-admin-field input[type=checkbox], .kcsg-featured-toggle input[type=checkbox], .kcsg-stop-photo-tools input[type=checkbox] { appearance: checkbox !important; -webkit-appearance: checkbox !important; width: 16px !important; min-width: 16px !important; max-width: 16px !important; height: 16px !important; min-height: 16px !important; max-height: 16px !important; margin: 0 6px 0 0 !important; padding: 0 !important; vertical-align: middle !important; }"
-)
-'''
-          if 'Remove Featured Locations UI/cards from the release' not in script:
-              script = script.replace('php.write_text(content)\n\n# Frontend JS.', php_cleanup + '\nphp.write_text(content)\n\n# Frontend JS.', 1)
-
-          js_cleanup = r"""
-# Keep only amenity-level Executive Picks; remove Featured Location cards from results.
-js_content = re.sub(r"\n    function currentFeaturedLocations\(\) \{.*?\n    \}\n\n    function cardTemplate", "\n    function cardTemplate", js_content, flags=re.S)
-js_content = re.sub(r"\n    function featuredLocationTemplate\(location\) \{.*?\n    \}\n\n    function categoryHeaderMarkup", "\n\n    function categoryHeaderMarkup", js_content, flags=re.S)
-render_only_amenities = r'''    function render() {
-      var filtered = sortFeaturedFirst(currentFilteredAmenities());
-      setActiveButton(state.mode === 'category' ? state.category : 'all');
-      setActiveStop(state.stop);
-      setStopSelect(state.mode === 'stop' ? state.stop : '');
-      updateStopMuting();
-      updateStopFeature();
-      renderStopCategoryKey();
-
-      if (title) {
-        if (state.mode === 'stop' && state.stop) {
-          title.textContent = stopLabel(state.stop);
-        } else if (state.mode === 'category') {
-          title.textContent = getCategoryLabel(state.category);
-        } else {
-          title.textContent = 'All amenities';
-        }
-      }
-
-      if (count) {
-        count.textContent = filtered.length === 1 ? '1 result' : filtered.length + ' results';
-      }
-
-      var headerMarkup = categoryHeaderMarkup();
-
-      if (!filtered.length) {
-        results.innerHTML = headerMarkup + '<div class="kcsg-empty">No amenities match this selection yet.</div>';
-        resetResultsScroll();
-        return;
-      }
-
-      results.innerHTML = headerMarkup + filtered.map(cardTemplate).join('');
-      attachResultHoverEvents();
-      resetResultsScroll();
-    }
-
-    function attachResultHoverEvents'''
-js_content = re.sub(r"    function render\(\) \{.*?\n    \}\n\n    function attachResultHoverEvents", render_only_amenities, js_content, flags=re.S)
-"""
-          if 'remove Featured Location cards from results' not in script:
-              script = script.replace('js.write_text(js_content)\n\n# Frontend CSS', js_cleanup + '\njs.write_text(js_content)\n\n# Frontend CSS', 1)
-
-          builder.write_text(script)
+          path = Path('kc-streetcar-guide.php')
+          content = path.read_text()
+          old = ".kcsg-admin-field input, .kcsg-admin-field select, .kcsg-admin-field textarea { width: 100%; max-width: 100%; }"
+          new = ".kcsg-admin-field input:not([type=checkbox]), .kcsg-admin-field select, .kcsg-admin-field textarea { width: 100%; max-width: 100%; }\n            .kcsg-admin-field input[type=checkbox], .kcsg-featured-toggle input[type=checkbox], .kcsg-stop-photo-tools input[type=checkbox] { appearance: checkbox !important; -webkit-appearance: checkbox !important; width: 16px !important; min-width: 16px !important; max-width: 16px !important; height: 16px !important; min-height: 16px !important; max-height: 16px !important; margin: 0 6px 0 0 !important; padding: 0 !important; vertical-align: middle !important; }"
+          content = content.replace(old, new)
+          path.write_text(content)
           PY
 
       - name: Disable inline SVG map script
