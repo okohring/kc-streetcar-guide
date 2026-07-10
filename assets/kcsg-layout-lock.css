@@ -25,13 +25,17 @@
   .kcsg-guide .kcsg-results-panel,
   .kcsg-guide .kcsg-results-scroll,
   .kcsg-guide .kcsg-results,
-  .kcsg-guide .kcsg-stop-feature,
+  .kcsg-guide .kcsg-stop-feature {
+    width: var(--kcsg-card-standard-width) !important;
+    max-width: var(--kcsg-card-standard-width) !important;
+  }
+
   .kcsg-guide .kcsg-stop-photo,
   .kcsg-guide .kcsg-section-heading,
   .kcsg-guide .kcsg-empty,
   .kcsg-guide .kcsg-card {
-    width: var(--kcsg-card-standard-width) !important;
-    max-width: var(--kcsg-card-standard-width) !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
 
