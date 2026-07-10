@@ -14,7 +14,7 @@ script = script.replace(
 )
 script = script.replace(
     '- Adds Featured Amenity toggles so selected amenities sort first and show as Executive Picks.\n',
-    '- Adds Featured Amenity toggles so selected amenities sort first and show as Executive Picks.\n- Adds multi-select streetcar stop assignment so one amenity can appear under more than one nearby stop.\n'
+    '- Adds Featured Amenity toggles so selected amenities sort first and show as Executive Picks.\n- Adds multi-select streetcar stop assignment so one amenity can appear under more than one nearby stop.\n- Adds shortcode examples to the amenities admin page.\n'
 )
 
 # Remove the frontend font-control CSS from the generated feature CSS block.
@@ -34,9 +34,13 @@ script = script.replace(
 )
 
 final_php_cleanup = r'''
-# Remove Advanced Settings/font controls and add multi-stop amenity assignment support.
+# Remove Advanced Settings/font controls, add multi-stop amenity assignment support, and show shortcode examples on the amenities page.
 content = content.replace("        add_action('admin_menu', array($this, 'add_advanced_settings_page'));\n", "")
 content = content.replace("        add_action('admin_post_kcsg_save_advanced_settings', array($this, 'save_advanced_settings'));\n", "")
+content = content.replace(
+    "        add_action('admin_menu', array($this, 'add_stop_photos_page'));\n",
+    "        add_action('admin_menu', array($this, 'add_stop_photos_page'));\n        add_action('admin_notices', array($this, 'render_shortcode_reference_notice'));\n"
+)
 content = re.sub(r"\n    public static function get_font_settings\(\) \{.*?\n    public static function ensure_stop_header_crop\(", "\n    public static function ensure_stop_header_crop(", content, flags=re.S)
 content = re.sub(r"\n    public function add_advanced_settings_page\(\) \{.*?\n    public function save_advanced_settings\(\) \{.*?\n    \}\n", "\n", content, flags=re.S)
 content = content.replace("        $is_advanced_settings_page = ($current_page === 'kcsg-advanced-settings');\n", "")
@@ -44,6 +48,26 @@ content = content.replace(" && !$is_advanced_settings_page", "")
 content = content.replace("            'fontSettings' => self::get_font_settings(),\n", "")
 content = content.replace("        $font_settings = self::get_font_settings();\n        $guide_font_class = 'kcsg-font-' . $font_settings['mode'];\n        $guide_font_style = self::get_guide_font_style();\n\n", "")
 content = content.replace('        <section id="<?php echo esc_attr($instance_id); ?>" class="kcsg-guide <?php echo esc_attr($guide_font_class); ?>" style="<?php echo esc_attr($guide_font_style); ?>" data-kcsg-guide>\n', '        <section id="<?php echo esc_attr($instance_id); ?>" class="kcsg-guide" data-kcsg-guide>\n')
+
+shortcode_notice = r'''
+    public function render_shortcode_reference_notice() {
+        global $pagenow, $typenow;
+
+        if ($pagenow !== 'edit.php' || $typenow !== self::CPT) {
+            return;
+        }
+        ?>
+        <div class="notice notice-info kcsg-shortcode-reference">
+            <p><strong><?php esc_html_e('KC Streetcar Guide shortcodes', 'kc-streetcar-guide'); ?></strong></p>
+            <p><?php esc_html_e('Plain:', 'kc-streetcar-guide'); ?> <code>[kc_streetcar_guide]</code></p>
+            <p><?php esc_html_e('Custom title/subtitle:', 'kc-streetcar-guide'); ?> <code>[kc_streetcar_guide title="KC Streetcar Visitor Guide" intro="Choose a category or streetcar stop to find nearby amenities."]</code></p>
+        </div>
+        <?php
+    }
+
+'''
+if 'function render_shortcode_reference_notice' not in content:
+    content = content.replace("\n    public function add_meta_boxes() {", "\n" + shortcode_notice + "    public function add_meta_boxes() {", 1)
 
 content = content.replace(
     "        $featured = get_post_meta($post->ID, '_kcsg_featured', true);\n        $current_terms = get_the_terms($post->ID, self::TAX);\n",
@@ -148,7 +172,7 @@ content = content.replace(
 )
 '''
 
-if 'add multi-stop amenity assignment support.' not in script:
+if 'show shortcode examples on the amenities page.' not in script:
     script = script.replace('php.write_text(content)\n\n# Frontend JS.', final_php_cleanup + '\nphp.write_text(content)\n\n# Frontend JS.', 1)
 
 multi_stop_js = r"""
@@ -186,4 +210,4 @@ if 'Support amenities assigned to multiple stops in frontend filtering/rendering
     script = script.replace('js.write_text(js_content)\n\n# Frontend CSS', multi_stop_js + '\njs.write_text(js_content)\n\n# Frontend CSS', 1)
 
 builder.write_text(script)
-print('Prepared release build without Advanced Settings, with multi-stop amenities.')
+print('Prepared release build without Advanced Settings, with multi-stop amenities and shortcode examples.')
