@@ -9,7 +9,7 @@ fi
 
 TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
-CHANGELOG="Adds featured amenities, configurable featured locations, advanced font controls, entity decoding for titles, and keeps the map-link-only amenity workflow plus bulk stop photo crop tools."
+CHANGELOG="Keeps amenity-level Executive Pick toggles, advanced font controls, entity decoding, map-link-only amenities, and bulk stop photo crop tools. Removes Featured Locations cards and SVG map stars."
 
 perl -0pi -e "s/Version:\s*[^\n]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
@@ -109,62 +109,6 @@ helpers = r'''
         );
     }
 
-    public static function default_featured_locations() {
-        return array(
-            array(
-                'enabled' => '1',
-                'name' => 'The Abbott',
-                'label' => 'Event Venue',
-                'stop' => 'stop-crossroads',
-                'map_url' => '',
-                'website_url' => '',
-            ),
-            array(
-                'enabled' => '1',
-                'name' => 'Hotel Indigo',
-                'label' => 'Host Hotel',
-                'stop' => 'stop-crossroads',
-                'map_url' => '',
-                'website_url' => '',
-            ),
-        );
-    }
-
-    public static function get_featured_locations() {
-        $saved = get_option('kcsg_featured_locations', null);
-        $locations = is_array($saved) ? $saved : self::default_featured_locations();
-        $stops = self::stops();
-        $clean = array();
-
-        foreach ($locations as $location) {
-            if (!is_array($location)) {
-                continue;
-            }
-
-            $stop = isset($location['stop']) ? sanitize_key($location['stop']) : '';
-            if ($stop && !isset($stops[$stop])) {
-                $stop = '';
-            }
-
-            $name = isset($location['name']) ? self::decode_plain_text(sanitize_text_field($location['name'])) : '';
-            $label = isset($location['label']) ? self::decode_plain_text(sanitize_text_field($location['label'])) : '';
-            if ($name === '' && $label === '' && $stop === '') {
-                continue;
-            }
-
-            $clean[] = array(
-                'enabled' => !empty($location['enabled']) ? '1' : '',
-                'name' => $name,
-                'label' => $label,
-                'stop' => $stop,
-                'mapUrl' => isset($location['map_url']) ? esc_url_raw($location['map_url']) : '',
-                'websiteUrl' => isset($location['website_url']) ? esc_url_raw($location['website_url']) : '',
-            );
-        }
-
-        return $clean;
-    }
-
     public static function get_font_settings() {
         $settings = get_option('kcsg_font_settings', array());
         $settings = is_array($settings) ? $settings : array();
@@ -240,11 +184,6 @@ helpers = r'''
         }
 
         $font_settings = self::get_font_settings();
-        $featured_locations = self::get_featured_locations();
-        $stops = self::stops();
-        for ($i = count($featured_locations); $i < 6; $i++) {
-            $featured_locations[] = array('enabled' => '', 'name' => '', 'label' => '', 'stop' => '', 'mapUrl' => '', 'websiteUrl' => '');
-        }
         ?>
         <div class="wrap kcsg-advanced-settings-page">
             <h1><?php esc_html_e('Streetcar Advanced Settings', 'kc-streetcar-guide'); ?></h1>
@@ -273,23 +212,6 @@ helpers = r'''
                     </div>
                 </section>
 
-                <section class="kcsg-advanced-card">
-                    <h2><?php esc_html_e('Featured Locations', 'kc-streetcar-guide'); ?></h2>
-                    <p class="kcsg-location-help"><?php esc_html_e('Add event-specific starred locations, choose the streetcar stop where they appear, and toggle each one on or off.', 'kc-streetcar-guide'); ?></p>
-                    <div class="kcsg-featured-location-list">
-                        <?php foreach ($featured_locations as $index => $location) : ?>
-                            <div class="kcsg-featured-location-row">
-                                <label class="kcsg-featured-toggle"><input type="checkbox" name="kcsg_featured_locations[<?php echo esc_attr($index); ?>][enabled]" value="1" <?php checked(!empty($location['enabled'])); ?> /> <?php esc_html_e('Show', 'kc-streetcar-guide'); ?></label>
-                                <p><label><strong><?php esc_html_e('Name', 'kc-streetcar-guide'); ?></strong></label><input type="text" name="kcsg_featured_locations[<?php echo esc_attr($index); ?>][name]" value="<?php echo esc_attr($location['name']); ?>" placeholder="The Abbott" /></p>
-                                <p><label><strong><?php esc_html_e('Label', 'kc-streetcar-guide'); ?></strong></label><input type="text" name="kcsg_featured_locations[<?php echo esc_attr($index); ?>][label]" value="<?php echo esc_attr($location['label']); ?>" placeholder="Event Venue" /></p>
-                                <p><label><strong><?php esc_html_e('Streetcar Stop', 'kc-streetcar-guide'); ?></strong></label><select name="kcsg_featured_locations[<?php echo esc_attr($index); ?>][stop]"><option value=""><?php esc_html_e('Select a stop', 'kc-streetcar-guide'); ?></option><?php foreach ($stops as $stop_id => $stop_label) : ?><option value="<?php echo esc_attr($stop_id); ?>" <?php selected($location['stop'], $stop_id); ?>><?php echo esc_html($stop_label); ?></option><?php endforeach; ?></select></p>
-                                <p><label><strong><?php esc_html_e('Google Maps URL', 'kc-streetcar-guide'); ?></strong></label><input type="url" name="kcsg_featured_locations[<?php echo esc_attr($index); ?>][map_url]" value="<?php echo esc_url($location['mapUrl']); ?>" placeholder="https://www.google.com/maps/..." /></p>
-                                <p><label><strong><?php esc_html_e('Website URL', 'kc-streetcar-guide'); ?></strong></label><input type="url" name="kcsg_featured_locations[<?php echo esc_attr($index); ?>][website_url]" value="<?php echo esc_url($location['websiteUrl']); ?>" placeholder="https://example.com" /></p>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </section>
-
                 <?php submit_button(__('Save Advanced Settings', 'kc-streetcar-guide')); ?>
             </form>
         </div>
@@ -313,33 +235,6 @@ helpers = r'''
         $font_size = isset($font_incoming['size']) ? absint($font_incoming['size']) : 14;
         $font_size = max(10, min(22, $font_size));
         update_option('kcsg_font_settings', array('mode' => $font_mode, 'size' => $font_size), false);
-
-        $incoming_locations = isset($_POST['kcsg_featured_locations']) && is_array($_POST['kcsg_featured_locations']) ? wp_unslash($_POST['kcsg_featured_locations']) : array();
-        $stops = self::stops();
-        $locations = array();
-        foreach ($incoming_locations as $location) {
-            if (!is_array($location)) {
-                continue;
-            }
-            $name = isset($location['name']) ? sanitize_text_field($location['name']) : '';
-            $label = isset($location['label']) ? sanitize_text_field($location['label']) : '';
-            $stop = isset($location['stop']) ? sanitize_key($location['stop']) : '';
-            if ($stop && !isset($stops[$stop])) {
-                $stop = '';
-            }
-            if ($name === '' && $label === '' && $stop === '') {
-                continue;
-            }
-            $locations[] = array(
-                'enabled' => !empty($location['enabled']) ? '1' : '',
-                'name' => $name,
-                'label' => $label,
-                'stop' => $stop,
-                'map_url' => isset($location['map_url']) ? esc_url_raw($location['map_url']) : '',
-                'website_url' => isset($location['website_url']) ? esc_url_raw($location['website_url']) : '',
-            );
-        }
-        update_option('kcsg_featured_locations', $locations, false);
 
         wp_safe_redirect(add_query_arg(array(
             'post_type' => self::CPT,
@@ -403,14 +298,11 @@ content = content.replace("""        wp_add_inline_style('wp-admin', '
             .kcsg-stop-photo-tools h2,
             .kcsg-advanced-card h2 { margin: 0 0 8px; font-size: 16px; }
             .kcsg-location-help { margin: 6px 0 12px; color: #646970; font-size: 12px; }
-            .kcsg-featured-location-list { display: grid; gap: 14px; }
-            .kcsg-featured-location-row { display: grid; grid-template-columns: 80px repeat(5, minmax(120px, 1fr)); gap: 10px; align-items: end; padding: 12px; border: 1px solid #dcdcde; border-radius: 8px; background: #f6f7f7; }
-            .kcsg-featured-location-row p { margin: 0; }
-            .kcsg-featured-location-row label { display: block; margin-bottom: 5px; }
-            .kcsg-featured-location-row input:not([type=checkbox]), .kcsg-featured-location-row select { width: 100%; max-width: 100%; }
-            .kcsg-featured-toggle { align-self: center; margin-bottom: 0 !important; }
-            @media (max-width: 1100px) { .kcsg-featured-location-row { grid-template-columns: 1fr 1fr; } }
 """, 1)
+content = content.replace(
+    ".kcsg-admin-field input, .kcsg-admin-field select, .kcsg-admin-field textarea { width: 100%; max-width: 100%; }",
+    ".kcsg-admin-field input:not([type=checkbox]), .kcsg-admin-field select, .kcsg-admin-field textarea { width: 100%; max-width: 100%; }\n            .kcsg-admin-field input[type=checkbox], .kcsg-stop-photo-tools input[type=checkbox] { appearance: checkbox !important; -webkit-appearance: checkbox !important; width: 16px !important; min-width: 16px !important; max-width: 16px !important; height: 16px !important; min-height: 16px !important; max-height: 16px !important; margin: 0 6px 0 0 !important; padding: 0 !important; vertical-align: middle !important; }"
+)
 
 # Amenity edit fields: map link, website, featured only.
 for line in (
@@ -423,8 +315,6 @@ content = content.replace("""        $url = get_post_meta($post->ID, '_kcsg_url'
         $current_terms = get_the_terms($post->ID, self::TAX);
 """, """        $url = get_post_meta($post->ID, '_kcsg_url', true);
         $website_url = get_post_meta($post->ID, '_kcsg_website_url', true);
-        $map_lat = get_post_meta($post->ID, '_kcsg_map_lat', true);
-        $map_lng = get_post_meta($post->ID, '_kcsg_map_lng', true);
         $featured = get_post_meta($post->ID, '_kcsg_featured', true);
         $current_terms = get_the_terms($post->ID, self::TAX);
 """, 1)
@@ -699,7 +589,6 @@ content = content.replace("""            'stopTrackers' => self::get_stop_tracke
 
         ob_start();
 """, """            'stopTrackers' => self::get_stop_tracker_data(),
-            'featuredLocations' => self::get_featured_locations(),
             'fontSettings' => self::get_font_settings(),
             'arrivalsEndpoint' => esc_url_raw(rest_url('kcsg/v1/arrivals')),
         );
@@ -757,13 +646,6 @@ card_block = r'''    function actionLinksMarkup(name, mapUrl, websiteUrl) {
       });
     }
 
-    function currentFeaturedLocations() {
-      if (state.mode !== 'stop' || !state.stop) return [];
-      return (data.featuredLocations || []).filter(function (location) {
-        return location && location.enabled && location.name && location.stop === state.stop;
-      });
-    }
-
     function cardTemplate(amenity) {
       var category = firstCategory(amenity);
       var categoryColor = cssColor(category && category.color, '#008bd2');
@@ -788,27 +670,10 @@ card_block = r'''    function actionLinksMarkup(name, mapUrl, websiteUrl) {
         '</article>';
     }
 
-    function featuredLocationTemplate(location) {
-      var label = location.label || 'Featured location';
-      var stopLabelText = stopLabel(location.stop);
-      return '' +
-        '<article class="kcsg-card kcsg-featured-location-card is-featured" data-kcsg-card-stop="' + esc(location.stop || '') + '" style="--kcsg-category-color:#f0a500;">' +
-          '<div class="kcsg-card-header">' +
-            '<h4>' + esc(location.name) + '</h4>' +
-            '<div class="kcsg-card-actions"><span class="kcsg-featured-badge">★ ' + esc(label) + '</span>' + actionLinksMarkup(location.name, location.mapUrl || '', location.websiteUrl || '') + '</div>' +
-          '</div>' +
-          '<div class="kcsg-meta kcsg-meta--single">' +
-            '<span class="kcsg-stop-meta"><strong>Streetcar stop</strong><button type="button" class="kcsg-stop-name" data-kcsg-card-stop="' + esc(location.stop || '') + '">' + esc(stopLabelText) + '</button></span>' +
-          '</div>' +
-        '</article>';
-    }
-
     function categoryHeaderMarkup'''
 js_content = re.sub(r"    function cardTemplate\(amenity\) \{.*?\n    \}\n\n    function categoryHeaderMarkup", card_block, js_content, flags=re.S)
 render_block = r'''    function render() {
       var filtered = sortFeaturedFirst(currentFilteredAmenities());
-      var featuredLocations = currentFeaturedLocations();
-      var totalResults = filtered.length + featuredLocations.length;
       setActiveButton(state.mode === 'category' ? state.category : 'all');
       setActiveStop(state.stop);
       setStopSelect(state.mode === 'stop' ? state.stop : '');
@@ -827,18 +692,18 @@ render_block = r'''    function render() {
       }
 
       if (count) {
-        count.textContent = totalResults === 1 ? '1 result' : totalResults + ' results';
+        count.textContent = filtered.length === 1 ? '1 result' : filtered.length + ' results';
       }
 
       var headerMarkup = categoryHeaderMarkup();
 
-      if (!totalResults) {
+      if (!filtered.length) {
         results.innerHTML = headerMarkup + '<div class="kcsg-empty">No amenities match this selection yet.</div>';
         resetResultsScroll();
         return;
       }
 
-      results.innerHTML = headerMarkup + featuredLocations.map(featuredLocationTemplate).join('') + filtered.map(cardTemplate).join('');
+      results.innerHTML = headerMarkup + filtered.map(cardTemplate).join('');
       attachResultHoverEvents();
       resetResultsScroll();
     }
@@ -887,9 +752,18 @@ feature_css = r'''
 '''
 if 'KC Streetcar Guide featured cards and font controls' not in css_content:
     css.write_text(css_content + feature_css)
+
+# Remove dynamic/inline SVG featured-location code and old hardcoded hotel/venue star labels from the release.
+svg = Path('assets/kc-streetcar-line.svg')
+svg_content = svg.read_text()
+svg_content = re.sub(r'\s*<script>\s*<!\[CDATA\[.*?\]\]>\s*</script>\s*', '\n', svg_content, flags=re.S)
+svg_content = re.sub(r'\s*<g id="kcsg-featured-map-locations"[^>]*>\s*</g>\s*', '\n', svg_content, flags=re.S)
+svg_content = re.sub(r'\n\s*<g>\s*<text class="st1"[^>]*>\s*<tspan[^>]*>The Abbott</tspan>\s*</text>.*?</g>\s*', '\n', svg_content, flags=re.S)
+svg_content = re.sub(r'\n\s*<g>\s*<text class="st1"[^>]*>\s*<tspan[^>]*>Hotel Indigo</tspan>\s*</text>.*?</g>\s*', '\n', svg_content, flags=re.S)
+svg.write_text(svg_content)
 PY
 
-# Minimal safety checks only. Feature-specific grep checks were too brittle during rapid iteration.
+# Minimal safety checks only.
 if ! grep -q "Version: $VERSION" kc-streetcar-guide.php; then
   echo "Plugin header version does not match release version $VERSION."
   exit 1
@@ -922,9 +796,9 @@ zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Adds Featured Amenity toggles so selected amenities sort first and show as Executive Picks.
-- Adds Advanced Settings with configurable Featured Locations, including show/hide, label, assigned streetcar stop, Google Maps URL, and optional website URL.
-- Adds font controls for inheriting the theme font or using Arial, plus adjustable base font size.
+- Keeps amenity-level Featured Amenity toggles so selected amenities sort first and show as Executive Picks.
+- Removes Featured Locations cards and map stars entirely.
+- Keeps Advanced Settings for font source and base font size only.
 - Fixes encoded ampersands/apostrophes in titles and descriptions before rendering.
 - Keeps the Google Maps link-only amenity workflow with no hotel or walk/drive time fields.
 - Keeps bulk stop-photo selection, 1040×520 hard-cropped stop header images, optional original-file deletion, responsive amenity column fixes, text-only no-photo stop headers, theme shielding, and live arrivals.
