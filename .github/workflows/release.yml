@@ -18,6 +18,19 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Keep admin checkboxes normal width
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('kc-streetcar-guide.php')
+          content = path.read_text()
+          old = ".kcsg-admin-field input, .kcsg-admin-field select, .kcsg-admin-field textarea { width: 100%; max-width: 100%; }"
+          new = ".kcsg-admin-field input:not([type=checkbox]), .kcsg-admin-field select, .kcsg-admin-field textarea { width: 100%; max-width: 100%; }\n            .kcsg-admin-field input[type=checkbox], .kcsg-featured-toggle input[type=checkbox] { width: auto !important; max-width: none !important; min-width: 0 !important; margin: 0 6px 0 0 !important; }"
+          content = content.replace(old, new)
+          path.write_text(content)
+          PY
+
       - name: Build and release plugin
         run: bash .github/build-and-release.sh "$VERSION"
         env:
