@@ -15,19 +15,17 @@
 }
 
 .kcsg-guide .kcsg-stop-photo--placeholder {
-  height: 260px !important;
-  min-height: 260px !important;
-  background:
-    linear-gradient(
-      to top,
-      rgba(255, 255, 255, 1) 0%,
-      rgba(255, 255, 255, 0.99) 18%,
-      rgba(255, 255, 255, 0.94) 38%,
-      rgba(255, 255, 255, 0.70) 62%,
-      rgba(255, 255, 255, 0.24) 84%,
-      rgba(255, 255, 255, 0.08) 100%
-    ),
-    linear-gradient(135deg, rgba(0, 139, 210, 0.16), rgba(255, 255, 255, 0.96));
+  position: relative !important;
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 0 14px !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .kcsg-guide .kcsg-stop-photo::after {
@@ -51,6 +49,11 @@
   ) !important;
 }
 
+.kcsg-guide .kcsg-stop-photo--placeholder::after {
+  content: none !important;
+  display: none !important;
+}
+
 .kcsg-guide .kcsg-stop-photo figcaption {
   left: 18px !important;
   bottom: 18px !important;
@@ -65,4 +68,27 @@
   left: 18px !important;
   right: 18px !important;
   bottom: 14px !important;
+}
+
+.kcsg-guide .kcsg-stop-photo--placeholder figcaption,
+.kcsg-guide .kcsg-stop-photo--placeholder.has-live-arrivals figcaption {
+  position: static !important;
+  display: block !important;
+  max-width: 100% !important;
+  margin: 0 0 6px !important;
+  padding: 0 !important;
+  color: var(--kcsg-blue-dark, #0b4f73) !important;
+  font-size: clamp(24px, 3vw, 34px) !important;
+  font-weight: 500 !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.04em !important;
+}
+
+.kcsg-guide .kcsg-stop-photo--placeholder .kcsg-live-arrivals {
+  position: static !important;
+  display: grid !important;
+  gap: 2px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: var(--kcsg-blue-dark, #0b4f73) !important;
 }
