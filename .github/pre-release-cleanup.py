@@ -121,8 +121,9 @@ content = re.sub(
     count=1,
     flags=re.S,
 )
-content = content.replace("            $stop_id = get_post_meta($post->ID, '_kcsg_stop', true);\n            $amenities[] = array(\n                'id' => $post->ID,\n                'name' => self::decode_plain_text(get_the_title($post)),\n                'stop' => $stop_id,\n                'stopLabel' => isset($stops[$stop_id]) ? $stops[$stop_id] : '',\n",
-"""            $stop_id = get_post_meta($post->ID, '_kcsg_stop', true);
+content = content.replace(
+    "            $stop_id = get_post_meta($post->ID, '_kcsg_stop', true);\n            $amenities[] = array(\n                'id' => $post->ID,\n                'name' => self::decode_plain_text(get_the_title($post)),\n                'stop' => $stop_id,\n                'stopLabel' => isset($stops[$stop_id]) ? $stops[$stop_id] : '',\n",
+    """            $stop_id = get_post_meta($post->ID, '_kcsg_stop', true);
             $stop_ids = get_post_meta($post->ID, '_kcsg_stops', true);
             $stop_ids = is_array($stop_ids) ? $stop_ids : array();
             $stop_ids = array_values(array_unique(array_intersect(array_map('sanitize_key', $stop_ids), array_keys($stops))));
@@ -143,13 +144,14 @@ content = content.replace("            $stop_id = get_post_meta($post->ID, '_kcs
                 'stops' => $stop_ids,
                 'stopLabel' => $stop_labels ? implode(', ', $stop_labels) : (isset($stops[$primary_stop_id]) ? $stops[$primary_stop_id] : ''),
                 'stopLabels' => $stop_labels,
-""")
+"""
+)
 '''
 
 if 'add multi-stop amenity assignment support.' not in script:
     script = script.replace('php.write_text(content)\n\n# Frontend JS.', final_php_cleanup + '\nphp.write_text(content)\n\n# Frontend JS.', 1)
 
-multi_stop_js = r'''
+multi_stop_js = r"""
 # Support amenities assigned to multiple stops in frontend filtering/rendering.
 multi_stop_helpers = r'''    function stopIdsForAmenity(amenity) {
       var ids = Array.isArray(amenity.stops) ? amenity.stops.filter(Boolean) : [];
@@ -178,7 +180,7 @@ if 'function stopIdsForAmenity' not in js_content:
 js_content = js_content.replace('if (amenity.stop !== stopId) return;', 'if (!amenityMatchesStop(amenity, stopId)) return;')
 js_content = js_content.replace('return amenity.stop === state.stop;', 'return amenityMatchesStop(amenity, state.stop);')
 js_content = js_content.replace("var stopLabelText = amenity.stopLabel || 'Not assigned';", "var stopLabelText = stopLabelsForAmenity(amenity);")
-'''
+"""
 
 if 'Support amenities assigned to multiple stops in frontend filtering/rendering.' not in script:
     script = script.replace('js.write_text(js_content)\n\n# Frontend CSS', multi_stop_js + '\njs.write_text(js_content)\n\n# Frontend CSS', 1)
