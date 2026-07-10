@@ -1,12 +1,12 @@
 {
   "name": "KC Streetcar Guide",
   "slug": "kc-streetcar-guide",
-  "version": "0.9.8",
-  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v0.9.8/kc-streetcar-guide.zip",
+  "version": "0.9.9",
+  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v0.9.9/kc-streetcar-guide.zip",
   "details_url": "https://github.com/okohring/kc-streetcar-guide",
   "requires": "6.0",
   "tested": "6.6",
   "requires_php": "7.4",
   "description": "Interactive WordPress visitor guide for amenities near the KC Streetcar line.",
-  "changelog": "Adds Google Maps URL-based location fields for amenities and the guide hotel, removes Walk from Hotel from the frontend/admin workflow, and keeps manual walk-from-stop/drive-from-hotel fields as editable fallbacks."
+  "changelog": "Adds no-cost coordinate-based travel time estimates, moves hotel location into Guide Settings, and adds bulk stop photo assignment with 1040x520 header crops plus optional original deletion."
 }
