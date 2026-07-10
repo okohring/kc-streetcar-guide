@@ -53,7 +53,7 @@ content = content.replace(
           if 'Remove Featured Locations UI/cards from the release' not in script:
               script = script.replace('php.write_text(content)\n\n# Frontend JS.', php_cleanup + '\nphp.write_text(content)\n\n# Frontend JS.', 1)
 
-          js_cleanup = r'''
+          js_cleanup = r"""
 # Keep only amenity-level Executive Picks; remove Featured Location cards from results.
 js_content = re.sub(r"\n    function currentFeaturedLocations\(\) \{.*?\n    \}\n\n    function cardTemplate", "\n    function cardTemplate", js_content, flags=re.S)
 js_content = re.sub(r"\n    function featuredLocationTemplate\(location\) \{.*?\n    \}\n\n    function categoryHeaderMarkup", "\n\n    function categoryHeaderMarkup", js_content, flags=re.S)
@@ -95,7 +95,7 @@ render_only_amenities = r'''    function render() {
 
     function attachResultHoverEvents'''
 js_content = re.sub(r"    function render\(\) \{.*?\n    \}\n\n    function attachResultHoverEvents", render_only_amenities, js_content, flags=re.S)
-'''
+"""
           if 'remove Featured Location cards from results' not in script:
               script = script.replace('js.write_text(js_content)\n\n# Frontend CSS', js_cleanup + '\njs.write_text(js_content)\n\n# Frontend CSS', 1)
 
