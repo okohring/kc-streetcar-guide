@@ -291,9 +291,6 @@ final class KCSG_Plugin {
                 <input type="url" name="kcsg_url" id="kcsg_url" value="<?php echo esc_url($url); ?>" placeholder="https://example.com" />
             </p>
         </div>
-        <p class="description">
-            <?php esc_html_e('Use the Category field above to assign Coffee, Food, Drinks, Culture, Shopping, Walks, etc. Add or edit available categories under Streetcar Guide → Categories.', 'kc-streetcar-guide'); ?>
-        </p>
         <?php
     }
 
