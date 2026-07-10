@@ -18,6 +18,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Prepare simplified release build
+        run: python3 .github/pre-release-cleanup.py
+
       - name: Build and release plugin
         run: bash .github/build-and-release.sh "$VERSION"
         env:
