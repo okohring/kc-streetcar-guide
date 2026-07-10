@@ -1,0 +1,57 @@
+name: Build and Release Plugin
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, without the leading v. Example: 0.7.9'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Keep admin checkboxes normal width
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('kc-streetcar-guide.php')
+          content = path.read_text()
+          old = ".kcsg-admin-field input, .kcsg-admin-field select, .kcsg-admin-field textarea { width: 100%; max-width: 100%; }"
+          new = ".kcsg-admin-field input:not([type=checkbox]), .kcsg-admin-field select, .kcsg-admin-field textarea { width: 100%; max-width: 100%; }\n            .kcsg-admin-field input[type=checkbox], .kcsg-featured-toggle input[type=checkbox] { width: auto !important; max-width: none !important; min-width: 0 !important; margin: 0 6px 0 0 !important; }"
+          content = content.replace(old, new)
+          path.write_text(content)
+          PY
+
+      - name: Disable inline SVG map script
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('assets/kc-streetcar-line.svg')
+          content = path.read_text()
+
+          # Inline scripts inside the SVG can interfere with page/theme preview loaders.
+          # Keep an empty featured-location layer for future use, but render nothing from inside the SVG itself.
+          content = re.sub(r'\s*<script>\s*<!\[CDATA\[.*?\]\]>\s*</script>\s*', '\n', content, flags=re.S)
+          content = re.sub(r'\s*<g id="kcsg-featured-map-locations"[^>]*>\s*</g>\s*', '\n', content, flags=re.S)
+          if 'id="kcsg-featured-map-locations"' not in content:
+              content = content.replace('</svg>', '  <g id="kcsg-featured-map-locations" aria-hidden="true"></g>\n</svg>')
+
+          path.write_text(content)
+          PY
+
+      - name: Build and release plugin
+        run: bash .github/build-and-release.sh "$VERSION"
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          GH_TOKEN: ${{ github.token }}
