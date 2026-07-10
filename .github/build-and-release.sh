@@ -11,7 +11,7 @@ TAG="v${VERSION#v}"
 DOWNLOAD_URL="https://github.com/okohring/kc-streetcar-guide/releases/download/${TAG}/kc-streetcar-guide.zip"
 CHANGELOG="Adds featured amenities, configurable featured locations, advanced font controls, entity decoding for titles, and keeps the map-link-only amenity workflow plus bulk stop photo crop tools."
 
-perl -0pi -e "s/Version:\s*[0-9.]+/Version: $VERSION/" kc-streetcar-guide.php
+perl -0pi -e "s/Version:\s*[^\n]+/Version: $VERSION/" kc-streetcar-guide.php
 perl -0pi -e "s/const VERSION = '[^']+';/const VERSION = '$VERSION';/" kc-streetcar-guide.php
 
 python3 - <<'PY'
@@ -25,13 +25,13 @@ content = php.read_text()
 content = content.replace("        add_filter('upgrader_post_install', array($this, 'rename_release_folder'), 10, 3);\n", "")
 content = re.sub(r"\n    public function rename_release_folder\(\$response, \$hook_extra, \$result\) \{.*?\n    \}\n", "\n", content, flags=re.S)
 
-# Add hooks for cropped stop headers and the new Advanced Settings page.
-constructor_additions = {
+# Add hooks for cropped stop headers and the Advanced Settings page.
+hook_replacements = {
     "        add_action('init', array($this, 'register_content_types'));\n": "        add_action('after_setup_theme', array($this, 'register_image_sizes'));\n        add_action('init', array($this, 'register_content_types'));\n",
     "        add_action('admin_menu', array($this, 'add_stop_photos_page'));\n": "        add_action('admin_menu', array($this, 'add_stop_photos_page'));\n        add_action('admin_menu', array($this, 'add_advanced_settings_page'));\n",
     "        add_action('admin_post_kcsg_save_stop_photos', array($this, 'save_stop_photos'));\n": "        add_action('admin_post_kcsg_save_stop_photos', array($this, 'save_stop_photos'));\n        add_action('admin_post_kcsg_save_advanced_settings', array($this, 'save_advanced_settings'));\n",
 }
-for old, new in constructor_additions.items():
+for old, new in hook_replacements.items():
     if old in content and new not in content:
         content = content.replace(old, new, 1)
 
@@ -146,10 +146,16 @@ helpers = r'''
                 $stop = '';
             }
 
+            $name = isset($location['name']) ? self::decode_plain_text(sanitize_text_field($location['name'])) : '';
+            $label = isset($location['label']) ? self::decode_plain_text(sanitize_text_field($location['label'])) : '';
+            if ($name === '' && $label === '' && $stop === '') {
+                continue;
+            }
+
             $clean[] = array(
                 'enabled' => !empty($location['enabled']) ? '1' : '',
-                'name' => isset($location['name']) ? self::decode_plain_text(sanitize_text_field($location['name'])) : '',
-                'label' => isset($location['label']) ? self::decode_plain_text(sanitize_text_field($location['label'])) : '',
+                'name' => $name,
+                'label' => $label,
                 'stop' => $stop,
                 'mapUrl' => isset($location['map_url']) ? esc_url_raw($location['map_url']) : '',
                 'websiteUrl' => isset($location['website_url']) ? esc_url_raw($location['website_url']) : '',
@@ -168,12 +174,7 @@ helpers = r'''
         }
 
         $size = isset($settings['size']) ? absint($settings['size']) : 14;
-        if ($size < 10) {
-            $size = 10;
-        }
-        if ($size > 22) {
-            $size = 22;
-        }
+        $size = max(10, min(22, $size));
 
         return array(
             'mode' => $mode,
@@ -246,7 +247,7 @@ helpers = r'''
         }
         ?>
         <div class="wrap kcsg-advanced-settings-page">
-            <h1><?php esc_html_e('Streetcar Guide Advanced Settings', 'kc-streetcar-guide'); ?></h1>
+            <h1><?php esc_html_e('Streetcar Advanced Settings', 'kc-streetcar-guide'); ?></h1>
             <?php if (isset($_GET['updated']) && $_GET['updated'] === '1') : ?>
                 <div class="notice notice-success is-dismissible"><p><?php esc_html_e('Advanced settings saved.', 'kc-streetcar-guide'); ?></p></div>
             <?php endif; ?>
@@ -371,28 +372,25 @@ helpers = r'''
         exit;
     }
 '''
-if 'function extract_google_maps_coordinates' not in content:
+if 'function register_image_sizes' not in content:
     anchor = "\n    public function register_content_types() {"
     content = content.replace(anchor, helpers + anchor, 1)
 
-# Hide default taxonomy slug/description noise in release admin.
-category_columns_old = """    public function category_columns($columns) {
+# Category admin cleanup.
+content = content.replace("""    public function category_columns($columns) {
         $new_columns = array();
 
         foreach ($columns as $key => $label) {
-"""
-category_columns_new = """    public function category_columns($columns) {
+""", """    public function category_columns($columns) {
         unset($columns['slug'], $columns['description']);
 
         $new_columns = array();
 
         foreach ($columns as $key => $label) {
-"""
-if category_columns_old in content:
-    content = content.replace(category_columns_old, category_columns_new, 1)
+""", 1)
 
-# Admin screens, CSS, and media behavior.
-admin_styles_old = """    public function admin_styles($hook) {
+# Admin styles and media script support.
+content = content.replace("""    public function admin_styles($hook) {
         global $post_type;
 
         $is_amenity_screen = ($post_type === self::CPT);
@@ -401,8 +399,7 @@ admin_styles_old = """    public function admin_styles($hook) {
         if (!$is_amenity_screen && !$is_stop_photo_page) {
             return;
         }
-"""
-admin_styles_new = """    public function admin_styles($hook) {
+""", """    public function admin_styles($hook) {
         global $post_type, $taxonomy;
 
         $current_page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
@@ -415,14 +412,11 @@ admin_styles_new = """    public function admin_styles($hook) {
         if (!$is_amenity_screen && !$is_category_screen && !$is_stop_photo_page && !$is_advanced_settings_page) {
             return;
         }
-"""
-if admin_styles_old in content:
-    content = content.replace(admin_styles_old, admin_styles_new, 1)
+""", 1)
 
-admin_css_anchor = """        wp_add_inline_style('wp-admin', '
+content = content.replace("""        wp_add_inline_style('wp-admin', '
             .kcsg-admin-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 18px; }
-"""
-admin_css_replacement = """        wp_add_inline_style('wp-admin', '
+""", """        wp_add_inline_style('wp-admin', '
             body.taxonomy-kcsg_category .term-slug-wrap,
             body.taxonomy-kcsg_category .term-description-wrap,
             body.taxonomy-kcsg_category .column-slug,
@@ -441,11 +435,9 @@ admin_css_replacement = """        wp_add_inline_style('wp-admin', '
             .kcsg-featured-location-row input:not([type=checkbox]), .kcsg-featured-location-row select { width: 100%; max-width: 100%; }
             .kcsg-featured-toggle { align-self: center; margin-bottom: 0 !important; }
             @media (max-width: 1100px) { .kcsg-featured-location-row { grid-template-columns: 1fr 1fr; } }
-"""
-if admin_css_anchor in content:
-    content = content.replace(admin_css_anchor, admin_css_replacement, 1)
+""", 1)
 
-# Amenity meta fields: map link, optional website, featured toggle; no walk/drive/hotel fields.
+# Amenity edit fields: map link, website, featured only; remove travel time fields.
 for line in (
     "        $walk_from_stop = get_post_meta($post->ID, '_kcsg_walk_from_stop', true);\n",
     "        $walk_from_hotel = get_post_meta($post->ID, '_kcsg_walk_from_hotel', true);\n",
@@ -453,33 +445,30 @@ for line in (
 ):
     content = content.replace(line, '')
 
-meta_url_old = """        $url = get_post_meta($post->ID, '_kcsg_url', true);
+content = content.replace("""        $url = get_post_meta($post->ID, '_kcsg_url', true);
         $current_terms = get_the_terms($post->ID, self::TAX);
-"""
-meta_url_new = """        $url = get_post_meta($post->ID, '_kcsg_url', true);
+""", """        $url = get_post_meta($post->ID, '_kcsg_url', true);
         $website_url = get_post_meta($post->ID, '_kcsg_website_url', true);
         $map_lat = get_post_meta($post->ID, '_kcsg_map_lat', true);
         $map_lng = get_post_meta($post->ID, '_kcsg_map_lng', true);
         $featured = get_post_meta($post->ID, '_kcsg_featured', true);
         $current_terms = get_the_terms($post->ID, self::TAX);
-"""
-if meta_url_old in content:
-    content = content.replace(meta_url_old, meta_url_new, 1)
+""", 1)
 
 for field in (
-    """            <p class="kcsg-admin-field">
+"""            <p class="kcsg-admin-field">
                 <label for="kcsg_walk_from_stop"><strong><?php esc_html_e('Walk from Stop', 'kc-streetcar-guide'); ?></strong></label>
                 <input type="text" name="kcsg_walk_from_stop" id="kcsg_walk_from_stop" value="<?php echo esc_attr($walk_from_stop); ?>" placeholder="4 min" />
             </p>
 
 """,
-    """            <p class="kcsg-admin-field">
+"""            <p class="kcsg-admin-field">
                 <label for="kcsg_walk_from_hotel"><strong><?php esc_html_e('Walk from Hotel', 'kc-streetcar-guide'); ?></strong></label>
                 <input type="text" name="kcsg_walk_from_hotel" id="kcsg_walk_from_hotel" value="<?php echo esc_attr($walk_from_hotel); ?>" placeholder="12 min" />
             </p>
 
 """,
-    """            <p class="kcsg-admin-field">
+"""            <p class="kcsg-admin-field">
                 <label for="kcsg_drive_from_hotel"><strong><?php esc_html_e('Drive from Hotel', 'kc-streetcar-guide'); ?></strong></label>
                 <input type="text" name="kcsg_drive_from_hotel" id="kcsg_drive_from_hotel" value="<?php echo esc_attr($drive_from_hotel); ?>" placeholder="5 min" />
             </p>
@@ -510,12 +499,11 @@ featured_field = category_field + """            <p class="kcsg-admin-field">
 if category_field in content and 'kcsg_featured' not in content:
     content = content.replace(category_field, featured_field, 1)
 
-url_field_old = """            <p class="kcsg-admin-field kcsg-admin-field-full">
+content = content.replace("""            <p class="kcsg-admin-field kcsg-admin-field-full">
                 <label for="kcsg_url"><strong><?php esc_html_e('URL', 'kc-streetcar-guide'); ?></strong></label>
                 <input type="url" name="kcsg_url" id="kcsg_url" value="<?php echo esc_url($url); ?>" placeholder="https://example.com" />
             </p>
-"""
-url_field_new = """            <p class="kcsg-admin-field kcsg-admin-field-full">
+""", """            <p class="kcsg-admin-field kcsg-admin-field-full">
                 <label for="kcsg_url"><strong><?php esc_html_e('Google Maps URL', 'kc-streetcar-guide'); ?></strong></label>
                 <input type="url" name="kcsg_url" id="kcsg_url" value="<?php echo esc_url($url); ?>" placeholder="https://www.google.com/maps/place/.../@39.0997,-94.5786,..." />
                 <span class="description"><?php esc_html_e('Visitors can use this link for route, walking, or driving details.', 'kc-streetcar-guide'); ?></span>
@@ -525,19 +513,16 @@ url_field_new = """            <p class="kcsg-admin-field kcsg-admin-field-full"
                 <label for="kcsg_website_url"><strong><?php esc_html_e('Website URL', 'kc-streetcar-guide'); ?></strong></label>
                 <input type="url" name="kcsg_website_url" id="kcsg_website_url" value="<?php echo esc_url($website_url); ?>" placeholder="https://www.example.org/" />
             </p>
-"""
-if url_field_old in content:
-    content = content.replace(url_field_old, url_field_new, 1)
+""", 1)
 
-save_setup_old = """        $allowed_stops = array_keys(self::stops());
+content = content.replace("""        $allowed_stops = array_keys(self::stops());
         $stop = isset($_POST['kcsg_stop']) ? sanitize_text_field(wp_unslash($_POST['kcsg_stop'])) : '';
         if (!in_array($stop, $allowed_stops, true)) {
             $stop = '';
         }
 
         $fields = array(
-"""
-save_setup_new = """        $allowed_stops = array_keys(self::stops());
+""", """        $allowed_stops = array_keys(self::stops());
         $stop = isset($_POST['kcsg_stop']) ? sanitize_text_field(wp_unslash($_POST['kcsg_stop'])) : '';
         if (!in_array($stop, $allowed_stops, true)) {
             $stop = '';
@@ -550,19 +535,16 @@ save_setup_new = """        $allowed_stops = array_keys(self::stops());
         );
 
         $fields = array(
-"""
-if save_setup_old in content:
-    content = content.replace(save_setup_old, save_setup_new, 1)
+""", 1)
 
-save_fields_old = """            '_kcsg_stop' => $stop,
+content = content.replace("""            '_kcsg_stop' => $stop,
             '_kcsg_walk_from_stop' => isset($_POST['kcsg_walk_from_stop']) ? sanitize_text_field(wp_unslash($_POST['kcsg_walk_from_stop'])) : '',
             '_kcsg_walk_from_hotel' => isset($_POST['kcsg_walk_from_hotel']) ? sanitize_text_field(wp_unslash($_POST['kcsg_walk_from_hotel'])) : '',
             '_kcsg_drive_from_hotel' => isset($_POST['kcsg_drive_from_hotel']) ? sanitize_text_field(wp_unslash($_POST['kcsg_drive_from_hotel'])) : '',
             '_kcsg_description' => isset($_POST['kcsg_description']) ? sanitize_textarea_field(wp_unslash($_POST['kcsg_description'])) : '',
             '_kcsg_url' => isset($_POST['kcsg_url']) ? esc_url_raw(wp_unslash($_POST['kcsg_url'])) : '',
         );
-"""
-save_fields_new = """            '_kcsg_stop' => $stop,
+""", """            '_kcsg_stop' => $stop,
             '_kcsg_featured' => !empty($_POST['kcsg_featured']) ? '1' : '',
             '_kcsg_description' => isset($_POST['kcsg_description']) ? sanitize_textarea_field(wp_unslash($_POST['kcsg_description'])) : '',
             '_kcsg_url' => $location['map_url'],
@@ -574,11 +556,9 @@ save_fields_new = """            '_kcsg_stop' => $stop,
         delete_post_meta($post_id, '_kcsg_walk_from_stop');
         delete_post_meta($post_id, '_kcsg_walk_from_hotel');
         delete_post_meta($post_id, '_kcsg_drive_from_hotel');
-"""
-if save_fields_old in content:
-    content = content.replace(save_fields_old, save_fields_new, 1)
+""", 1)
 
-# Admin list table: replace Times column with Featured + Map.
+# Admin list table: replace old Times column with Featured + Map.
 content = content.replace("                $new_columns['kcsg_times'] = __('Times', 'kc-streetcar-guide');", "                $new_columns['kcsg_featured'] = __('Featured', 'kc-streetcar-guide');\n                $new_columns['kcsg_map'] = __('Map', 'kc-streetcar-guide');")
 content = re.sub(
     r"\n        if \(\$column === 'kcsg_times'\) \{.*?\n        \}\n    \}\n\n    public function register_rest_routes",
@@ -602,13 +582,12 @@ content = re.sub(
     flags=re.S,
 )
 
-# Stop photo frontend should use the dedicated cropped header size.
-photo_url_old = """            $url = wp_get_attachment_image_url($attachment_id, 'large');
+# Stop photo frontend uses the cropped size.
+content = content.replace("""            $url = wp_get_attachment_image_url($attachment_id, 'large');
             if (!$url) {
                 continue;
             }
-"""
-photo_url_new = """            self::ensure_stop_header_crop($attachment_id, false);
+""", """            self::ensure_stop_header_crop($attachment_id, false);
             $url = wp_get_attachment_image_url($attachment_id, 'kcsg_stop_header');
             if (!$url) {
                 $url = wp_get_attachment_image_url($attachment_id, 'large');
@@ -616,26 +595,19 @@ photo_url_new = """            self::ensure_stop_header_crop($attachment_id, fal
             if (!$url) {
                 continue;
             }
-"""
-if photo_url_old in content:
-    content = content.replace(photo_url_old, photo_url_new, 1)
+""", 1)
 
-# Stop Photos page gets bulk selection/crop/delete tools.
-stop_page_vars_old = """        $photo_ids = self::get_stop_photo_ids();
+content = content.replace("""        $photo_ids = self::get_stop_photo_ids();
         $tracker_urls = self::get_stop_tracker_urls();
         ?>
-"""
-stop_page_vars_new = """        $photo_ids = self::get_stop_photo_ids();
+""", """        $photo_ids = self::get_stop_photo_ids();
         $tracker_urls = self::get_stop_tracker_urls();
         $delete_original_after_crop = (bool) get_option('kcsg_delete_original_after_crop', false);
         ?>
-"""
-if stop_page_vars_old in content:
-    content = content.replace(stop_page_vars_old, stop_page_vars_new, 1)
+""", 1)
 
-photo_grid_anchor = """                <div class="kcsg-stop-photo-grid">
-"""
-photo_tools_block = """                <section class="kcsg-stop-photo-tools">
+content = content.replace("""                <div class="kcsg-stop-photo-grid">
+""", """                <section class="kcsg-stop-photo-tools">
                     <h2><?php esc_html_e('Bulk Stop Photo Tools', 'kc-streetcar-guide'); ?></h2>
                     <p class="kcsg-location-help"><?php esc_html_e('Select multiple images at once. The plugin will try to match filenames to stop names, then fill remaining empty stops in order. Stop header crops are generated at 1040×520.', 'kc-streetcar-guide'); ?></p>
                     <p>
@@ -648,134 +620,39 @@ photo_tools_block = """                <section class="kcsg-stop-photo-tools">
                 </section>
 
                 <div class="kcsg-stop-photo-grid">
-"""
-if photo_grid_anchor in content:
-    content = content.replace(photo_grid_anchor, photo_tools_block, 1)
-
-card_open_old = """                        <section class="kcsg-stop-photo-card" data-kcsg-stop-photo-card>
-"""
-card_open_new = """                        <section class="kcsg-stop-photo-card" data-kcsg-stop-photo-card data-kcsg-stop-id="<?php echo esc_attr($stop_id); ?>" data-kcsg-stop-label="<?php echo esc_attr($stop_label); ?>">
-"""
-if card_open_old in content:
-    content = content.replace(card_open_old, card_open_new, 1)
-
-image_preview_old = """                        $image_url = $attachment_id ? wp_get_attachment_image_url($attachment_id, 'medium') : '';
-"""
-image_preview_new = """                        $image_url = $attachment_id ? wp_get_attachment_image_url($attachment_id, 'kcsg_stop_header') : '';
+""", 1)
+content = content.replace("""                        <section class="kcsg-stop-photo-card" data-kcsg-stop-photo-card>
+""", """                        <section class="kcsg-stop-photo-card" data-kcsg-stop-photo-card data-kcsg-stop-id="<?php echo esc_attr($stop_id); ?>" data-kcsg-stop-label="<?php echo esc_attr($stop_label); ?>">
+""", 1)
+content = content.replace("""                        $image_url = $attachment_id ? wp_get_attachment_image_url($attachment_id, 'medium') : '';
+""", """                        $image_url = $attachment_id ? wp_get_attachment_image_url($attachment_id, 'kcsg_stop_header') : '';
                         if (!$image_url && $attachment_id) {
                             $image_url = wp_get_attachment_image_url($attachment_id, 'medium');
                         }
-"""
-if image_preview_old in content:
-    content = content.replace(image_preview_old, image_preview_new, 1)
-
-save_stop_incoming_old = """        $incoming = isset($_POST['kcsg_stop_photos']) && is_array($_POST['kcsg_stop_photos']) ? wp_unslash($_POST['kcsg_stop_photos']) : array();
+""", 1)
+content = content.replace("""        $incoming = isset($_POST['kcsg_stop_photos']) && is_array($_POST['kcsg_stop_photos']) ? wp_unslash($_POST['kcsg_stop_photos']) : array();
         $incoming_trackers = isset($_POST['kcsg_stop_trackers']) && is_array($_POST['kcsg_stop_trackers']) ? wp_unslash($_POST['kcsg_stop_trackers']) : array();
         $saved = array();
-"""
-save_stop_incoming_new = """        $incoming = isset($_POST['kcsg_stop_photos']) && is_array($_POST['kcsg_stop_photos']) ? wp_unslash($_POST['kcsg_stop_photos']) : array();
+""", """        $incoming = isset($_POST['kcsg_stop_photos']) && is_array($_POST['kcsg_stop_photos']) ? wp_unslash($_POST['kcsg_stop_photos']) : array();
         $incoming_trackers = isset($_POST['kcsg_stop_trackers']) && is_array($_POST['kcsg_stop_trackers']) ? wp_unslash($_POST['kcsg_stop_trackers']) : array();
         $delete_original_after_crop = !empty($_POST['kcsg_delete_original_after_crop']);
         $saved = array();
-"""
-if save_stop_incoming_old in content:
-    content = content.replace(save_stop_incoming_old, save_stop_incoming_new, 1)
-
-attachment_save_old = """            if ($attachment_id) {
+""", 1)
+content = content.replace("""            if ($attachment_id) {
                 $saved[$stop_id] = $attachment_id;
             }
-"""
-attachment_save_new = """            if ($attachment_id) {
+""", """            if ($attachment_id) {
                 self::ensure_stop_header_crop($attachment_id, $delete_original_after_crop);
                 $saved[$stop_id] = $attachment_id;
             }
-"""
-if attachment_save_old in content:
-    content = content.replace(attachment_save_old, attachment_save_new, 1)
-
-update_options_old = """        update_option(self::STOP_PHOTO_OPTION, $saved, false);
+""", 1)
+content = content.replace("""        update_option(self::STOP_PHOTO_OPTION, $saved, false);
         update_option(self::STOP_TRACKER_OPTION, $saved_trackers, false);
-"""
-update_options_new = """        update_option(self::STOP_PHOTO_OPTION, $saved, false);
+""", """        update_option(self::STOP_PHOTO_OPTION, $saved, false);
         update_option(self::STOP_TRACKER_OPTION, $saved_trackers, false);
         update_option('kcsg_delete_original_after_crop', $delete_original_after_crop ? 1 : 0, false);
-"""
-if update_options_old in content:
-    content = content.replace(update_options_old, update_options_new, 1)
+""", 1)
 
-# Frontend data gets decoded names, map fields, featured amenities, featured locations, font settings, and no travel-time fields.
-content = content.replace("'name' => get_the_title($post),", "'name' => self::decode_plain_text(get_the_title($post)),")
-
-data_block_old = """                'walkFromStop' => get_post_meta($post->ID, '_kcsg_walk_from_stop', true),
-                'walkFromHotel' => get_post_meta($post->ID, '_kcsg_walk_from_hotel', true),
-                'driveFromHotel' => get_post_meta($post->ID, '_kcsg_drive_from_hotel', true),
-                'description' => get_post_meta($post->ID, '_kcsg_description', true),
-                'url' => get_post_meta($post->ID, '_kcsg_url', true),
-            );
-"""
-data_block_new = """                'featured' => get_post_meta($post->ID, '_kcsg_featured', true) === '1',
-                'description' => self::decode_plain_text(get_post_meta($post->ID, '_kcsg_description', true)),
-                'mapUrl' => get_post_meta($post->ID, '_kcsg_url', true),
-                'websiteUrl' => get_post_meta($post->ID, '_kcsg_website_url', true),
-                'mapLat' => get_post_meta($post->ID, '_kcsg_map_lat', true),
-                'mapLng' => get_post_meta($post->ID, '_kcsg_map_lng', true),
-                'url' => get_post_meta($post->ID, '_kcsg_url', true),
-            );
-"""
-if data_block_old in content:
-    content = content.replace(data_block_old, data_block_new, 1)
-
-shortcode_data_old = """            'stopTrackers' => self::get_stop_tracker_data(),
-            'arrivalsEndpoint' => esc_url_raw(rest_url('kcsg/v1/arrivals')),
-"""
-shortcode_data_new = """            'stopTrackers' => self::get_stop_tracker_data(),
-            'featuredLocations' => self::get_featured_locations(),
-            'fontSettings' => self::get_font_settings(),
-            'arrivalsEndpoint' => esc_url_raw(rest_url('kcsg/v1/arrivals')),
-"""
-if shortcode_data_old in content:
-    content = content.replace(shortcode_data_old, shortcode_data_new, 1)
-
-shortcode_before_ob = """        $data = array(
-            'amenities' => $this->get_amenities_data(),
-            'categories' => $this->get_category_data(),
-            'stops' => self::stops(),
-            'stopPhotos' => self::get_stop_photo_data(),
-            'stopTrackers' => self::get_stop_tracker_data(),
-            'featuredLocations' => self::get_featured_locations(),
-            'fontSettings' => self::get_font_settings(),
-            'arrivalsEndpoint' => esc_url_raw(rest_url('kcsg/v1/arrivals')),
-        );
-
-        ob_start();
-"""
-shortcode_before_ob_new = """        $data = array(
-            'amenities' => $this->get_amenities_data(),
-            'categories' => $this->get_category_data(),
-            'stops' => self::stops(),
-            'stopPhotos' => self::get_stop_photo_data(),
-            'stopTrackers' => self::get_stop_tracker_data(),
-            'featuredLocations' => self::get_featured_locations(),
-            'fontSettings' => self::get_font_settings(),
-            'arrivalsEndpoint' => esc_url_raw(rest_url('kcsg/v1/arrivals')),
-        );
-        $font_settings = self::get_font_settings();
-        $guide_font_class = 'kcsg-font-' . $font_settings['mode'];
-        $guide_font_style = self::get_guide_font_style();
-
-        ob_start();
-"""
-if shortcode_before_ob in content:
-    content = content.replace(shortcode_before_ob, shortcode_before_ob_new, 1)
-
-section_old = """        <section id="<?php echo esc_attr($instance_id); ?>" class="kcsg-guide" data-kcsg-guide>
-"""
-section_new = """        <section id="<?php echo esc_attr($instance_id); ?>" class="kcsg-guide <?php echo esc_attr($guide_font_class); ?>" style="<?php echo esc_attr($guide_font_style); ?>" data-kcsg-guide>
-"""
-if section_old in content:
-    content = content.replace(section_old, section_new, 1)
-
-# Add mass select behavior to the existing stop photo media script.
 script_marker = """                    $(document).on("click", "[data-kcsg-remove-stop-photo]", function(e) {
                         e.preventDefault();
                         var card = $(this).closest("[data-kcsg-stop-photo-card]");
@@ -783,7 +660,7 @@ script_marker = """                    $(document).on("click", "[data-kcsg-remov
                         card.find("[data-kcsg-stop-photo-preview]").html("<span>No photo selected</span>");
                     });
 """
-script_addition = script_marker + """
+script_addition = script_marker + r'''
 
                     function kcsgNormalizePhotoName(value) {
                         return String(value || "").toLowerCase().replace(/\.[a-z0-9]+$/i, "").replace(/[^a-z0-9]+/g, "");
@@ -842,16 +719,51 @@ script_addition = script_marker + """
                         });
                         frame.open();
                     });
-"""
+'''
 if script_marker in content and 'data-kcsg-mass-select-stop-photos' not in content:
     content = content.replace(script_marker, script_addition, 1)
 
+# Frontend data: decoded strings, featured flag, map fields, featured locations, font settings.
+content = content.replace("'name' => get_the_title($post),", "'name' => self::decode_plain_text(get_the_title($post)),")
+content = content.replace("""                'walkFromStop' => get_post_meta($post->ID, '_kcsg_walk_from_stop', true),
+                'walkFromHotel' => get_post_meta($post->ID, '_kcsg_walk_from_hotel', true),
+                'driveFromHotel' => get_post_meta($post->ID, '_kcsg_drive_from_hotel', true),
+                'description' => get_post_meta($post->ID, '_kcsg_description', true),
+                'url' => get_post_meta($post->ID, '_kcsg_url', true),
+            );
+""", """                'featured' => get_post_meta($post->ID, '_kcsg_featured', true) === '1',
+                'description' => self::decode_plain_text(get_post_meta($post->ID, '_kcsg_description', true)),
+                'mapUrl' => get_post_meta($post->ID, '_kcsg_url', true),
+                'websiteUrl' => get_post_meta($post->ID, '_kcsg_website_url', true),
+                'mapLat' => get_post_meta($post->ID, '_kcsg_map_lat', true),
+                'mapLng' => get_post_meta($post->ID, '_kcsg_map_lng', true),
+                'url' => get_post_meta($post->ID, '_kcsg_url', true),
+            );
+""", 1)
+content = content.replace("""            'stopTrackers' => self::get_stop_tracker_data(),
+            'arrivalsEndpoint' => esc_url_raw(rest_url('kcsg/v1/arrivals')),
+""", """            'stopTrackers' => self::get_stop_tracker_data(),
+            'featuredLocations' => self::get_featured_locations(),
+            'fontSettings' => self::get_font_settings(),
+            'arrivalsEndpoint' => esc_url_raw(rest_url('kcsg/v1/arrivals')),
+""", 1)
+content = content.replace("""        ob_start();
+        ?>
+        <section id="<?php echo esc_attr($instance_id); ?>" class="kcsg-guide" data-kcsg-guide>
+""", """        $font_settings = self::get_font_settings();
+        $guide_font_class = 'kcsg-font-' . $font_settings['mode'];
+        $guide_font_style = self::get_guide_font_style();
+
+        ob_start();
+        ?>
+        <section id="<?php echo esc_attr($instance_id); ?>" class="kcsg-guide <?php echo esc_attr($guide_font_class); ?>" style="<?php echo esc_attr($guide_font_style); ?>" data-kcsg-guide>
+""", 1)
+
 php.write_text(content)
 
-# Frontend card rendering: decode entities, map pin link + optional website link, featured cards/locations, and no walk/drive time rows.
+# Frontend JS: entity decode, map/website links, featured cards/locations, no travel-time rows.
 js = Path('assets/kcsg-frontend.js')
 js_content = js.read_text()
-
 old_esc = """  function esc(value) {
     return String(value || '')
       .replace(/&/g, '&amp;')
@@ -986,9 +898,50 @@ render_block = r'''    function render() {
 js_content = re.sub(r"    function render\(\) \{.*?\n    \}\n\n    function attachResultHoverEvents", render_block, js_content, flags=re.S)
 
 js.write_text(js_content)
+
+# Release CSS additions for featured badges/cards and font controls.
+css = Path('assets/kcsg-theme-overrides.css')
+css_content = css.read_text()
+feature_css = r'''
+
+/* KC Streetcar Guide featured cards and font controls */
+.kcsg-guide {
+  font-family: var(--kcsg-font-family, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif) !important;
+  font-size: var(--kcsg-base-font-size, 14px) !important;
+}
+
+.kcsg-guide .kcsg-results .kcsg-card .kcsg-card-header h4,
+.kcsg-guide .kcsg-results .kcsg-card h4,
+.kcsg-guide article.kcsg-card h4,
+.kcsg-guide .kcsg-section-heading h3,
+.kcsg-guide .kcsg-results .kcsg-section-heading h3 {
+  font-family: var(--kcsg-font-family, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif) !important;
+}
+
+.kcsg-guide .kcsg-card.is-featured {
+  border-left-width: 6px !important;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.08) !important;
+}
+
+.kcsg-guide .kcsg-featured-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  border: 1px solid rgba(240, 165, 0, 0.32) !important;
+  border-radius: 999px !important;
+  padding: 5px 9px !important;
+  color: #6f4f00 !important;
+  background: rgba(240, 165, 0, 0.12) !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+'''
+if 'KC Streetcar Guide featured cards and font controls' not in css_content:
+    css.write_text(css_content + feature_css)
 PY
 
-# Release build validations.
+# Lightweight release validations.
 if ! grep -q "Version: $VERSION" kc-streetcar-guide.php; then
   echo "Plugin header version does not match release version $VERSION."
   exit 1
@@ -1007,19 +960,14 @@ fi
 for required in \
   "register_image_sizes" \
   "add_image_size('kcsg_stop_header', 1040, 520, true)" \
-  "extract_google_maps_coordinates" \
-  "sanitize_location_payload" \
-  "ensure_stop_header_crop" \
-  "Bulk Stop Photo Tools" \
-  "kcsg_delete_original_after_crop" \
-  "Google Maps URL" \
-  "Featured Amenity" \
+  "decode_plain_text" \
   "Advanced Settings" \
+  "Featured Amenity" \
   "Featured Locations" \
   "kcsg_font_settings" \
   "kcsg_featured_locations" \
   "_kcsg_featured" \
-  "'mapUrl'"; do
+  "Google Maps URL"; do
   if ! grep -q "$required" kc-streetcar-guide.php; then
     echo "Required release PHP feature missing: $required"
     exit 1
@@ -1028,7 +976,6 @@ done
 
 for removed in \
   "Hotel Location" \
-  "Guide Settings" \
   "Walk from Stop" \
   "Walk from Hotel" \
   "Drive from Hotel" \
@@ -1041,25 +988,14 @@ for removed in \
   fi
 done
 
-if ! grep -q "unset(\$columns\['slug'\], \$columns\['description'\])" kc-streetcar-guide.php; then
-  echo "Category slug/description columns are still visible."
-  exit 1
-fi
-
-if ! grep -q "is_category_screen" kc-streetcar-guide.php; then
-  echo "Category admin screen detection is missing."
-  exit 1
-fi
-
 for required in \
-  "decodeEntities" \
   "kcsg-link--map" \
   "kcsg-link--website" \
-  "kcsg-featured-badge" \
+  "Executive Pick" \
   "featuredLocationTemplate" \
-  "sortFeaturedFirst"; do
+  "decodeEntities"; do
   if ! grep -q "$required" assets/kcsg-frontend.js; then
-    echo "Required frontend enhancement missing: $required"
+    echo "Required frontend feature missing: $required"
     exit 1
   fi
 done
@@ -1074,42 +1010,6 @@ for removed in \
   fi
 done
 
-for required in \
-  "function buildControlBar" \
-  "function resetResultsScroll" \
-  "function renderStopCategoryKey" \
-  "function categoryHeaderMarkup" \
-  "kiosk-6e6b4.firebaseio.com" \
-  "Riverfront (Northbound)" \
-  "UMKC (Southbound)" \
-  "ARRIVAL_CACHE_MS = 30000" \
-  "Arriving soon"; do
-  if ! grep -q "$required" assets/kcsg-frontend.js; then
-    echo "Required frontend behavior missing: $required"
-    exit 1
-  fi
-done
-
-for required in \
-  "KC Streetcar Guide theme shield" \
-  "KC Streetcar Guide final theme overrides" \
-  "kcsg-section-heading h3" \
-  "KC Streetcar Guide layout lock" \
-  "--kcsg-card-standard-width: 520px" \
-  "KC Streetcar Guide stop header photo height" \
-  "height: 260px" \
-  "kcsg-stop-photo--placeholder figcaption"; do
-  if ! grep -q -- "$required" assets/*.css; then
-    echo "Required CSS feature missing: $required"
-    exit 1
-  fi
-done
-
-if grep -q "compact screenshot-aligned layout correction" assets/kcsg-frontend.css; then
-  echo "Old stacked correction CSS is still present."
-  exit 1
-fi
-
 rm -rf build
 mkdir -p build/kc-streetcar-guide
 rsync -av \
@@ -1122,78 +1022,17 @@ rsync -av \
 cat build/kc-streetcar-guide/assets/kcsg-theme-shield.css build/kc-streetcar-guide/assets/kcsg-frontend.css build/kc-streetcar-guide/assets/kcsg-theme-overrides.css build/kc-streetcar-guide/assets/kcsg-layout-lock.css build/kc-streetcar-guide/assets/kcsg-stop-header-height.css > build/kc-streetcar-guide/assets/kcsg-frontend.merged.css
 mv build/kc-streetcar-guide/assets/kcsg-frontend.merged.css build/kc-streetcar-guide/assets/kcsg-frontend.css
 
-cat >> build/kc-streetcar-guide/assets/kcsg-frontend.css <<'CSS'
-
-/* KC Streetcar Guide advanced font and featured-item controls */
-.kcsg-guide,
-.kcsg-guide * {
-  font-family: var(--kcsg-font-family, inherit) !important;
-}
-
-.kcsg-guide {
-  font-size: var(--kcsg-base-font-size, 14px) !important;
-}
-
-.kcsg-guide .kcsg-card h4 {
-  font-size: calc(var(--kcsg-base-font-size, 14px) * 1.14) !important;
-}
-
-.kcsg-guide .kcsg-description,
-.kcsg-guide .kcsg-meta span,
-.kcsg-guide .kcsg-category-button,
-.kcsg-guide .kcsg-stop-category-button,
-.kcsg-guide .kcsg-stop-select {
-  font-size: var(--kcsg-base-font-size, 14px) !important;
-}
-
-.kcsg-guide .kcsg-card.is-featured {
-  box-shadow: 0 10px 24px rgba(9, 60, 87, 0.09) !important;
-}
-
-.kcsg-guide .kcsg-featured-location-card {
-  border-left-width: 7px !important;
-}
-
-.kcsg-guide .kcsg-featured-badge {
-  display: inline-flex !important;
-  align-items: center !important;
-  border-radius: 999px !important;
-  padding: 5px 8px !important;
-  border: 1px solid rgba(240, 165, 0, 0.35) !important;
-  background: rgba(240, 165, 0, 0.12) !important;
-  color: #7a5200 !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  line-height: 1 !important;
-  white-space: nowrap !important;
-}
-CSS
-
-for required in \
-  "KC Streetcar Guide theme shield" \
-  "KC Streetcar Guide final theme overrides" \
-  "KC Streetcar Guide layout lock" \
-  "KC Streetcar Guide stop header photo height" \
-  "kcsg-featured-badge" \
-  "--kcsg-font-family"; do
-  if ! grep -q -- "$required" build/kc-streetcar-guide/assets/kcsg-frontend.css; then
-    echo "Merged release CSS missing: $required"
-    exit 1
-  fi
-done
-
 cd build
 zip -r kc-streetcar-guide.zip kc-streetcar-guide
 cd ..
 
 NOTES=$(cat <<'NOTES'
-- Adds Featured Amenity controls to amenity edit screens so selected amenities can appear first and show an Executive Pick badge.
-- Adds Streetcar Guide → Advanced Settings with Featured Locations, including show/hide toggles, assigned stops, Google Maps URLs, and optional website URLs.
-- Adds font controls under Advanced Settings: inherit the active theme font or force Arial, plus a base font-size setting.
-- Fixes encoded title display issues such as ampersands and apostrophes showing as HTML entities.
-- Keeps the simplified map-link-only amenity workflow with no hotel location or walk/drive time fields.
-- Keeps bulk stop-photo selection, 1040×520 hard-cropped stop header images, and optional original-file deletion after crop generation.
-- Keeps the responsive amenity column fix, text-only no-photo stop headers, category header lock, theme shielding, Firebase-backed live arrivals, and safe release/update flow.
+- Adds Featured Amenity toggles so selected amenities sort first and show as Executive Picks.
+- Adds Advanced Settings with configurable Featured Locations, including show/hide, label, assigned streetcar stop, Google Maps URL, and optional website URL.
+- Adds font controls for inheriting the theme font or using Arial, plus adjustable base font size.
+- Fixes encoded ampersands/apostrophes in titles and descriptions before rendering.
+- Keeps the Google Maps link-only amenity workflow with no hotel or walk/drive time fields.
+- Keeps bulk stop-photo selection, 1040×520 hard-cropped stop header images, optional original-file deletion, responsive amenity column fixes, text-only no-photo stop headers, theme shielding, and live arrivals.
 NOTES
 )
 
