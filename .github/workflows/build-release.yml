@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version, without the leading v. Example: 0.7.9'
+        description: 'Release version, without the leading v. Example: 1.0.7'
         required: true
         type: string
 
@@ -17,34 +17,6 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
-      - name: Keep admin checkboxes normal width
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path('kc-streetcar-guide.php')
-          content = path.read_text()
-          old = ".kcsg-admin-field input, .kcsg-admin-field select, .kcsg-admin-field textarea { width: 100%; max-width: 100%; }"
-          new = ".kcsg-admin-field input:not([type=checkbox]), .kcsg-admin-field select, .kcsg-admin-field textarea { width: 100%; max-width: 100%; }\n            .kcsg-admin-field input[type=checkbox], .kcsg-featured-toggle input[type=checkbox], .kcsg-stop-photo-tools input[type=checkbox] { appearance: checkbox !important; -webkit-appearance: checkbox !important; width: 16px !important; min-width: 16px !important; max-width: 16px !important; height: 16px !important; min-height: 16px !important; max-height: 16px !important; margin: 0 6px 0 0 !important; padding: 0 !important; vertical-align: middle !important; }"
-          content = content.replace(old, new)
-          path.write_text(content)
-          PY
-
-      - name: Disable inline SVG map script
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-
-          path = Path('assets/kc-streetcar-line.svg')
-          content = path.read_text()
-
-          # Inline scripts inside the SVG can interfere with page/theme preview loaders.
-          content = re.sub(r'\s*<script>\s*<!\[CDATA\[.*?\]\]>\s*</script>\s*', '\n', content, flags=re.S)
-          content = re.sub(r'\s*<g id="kcsg-featured-map-locations"[^>]*>\s*</g>\s*', '\n', content, flags=re.S)
-          path.write_text(content)
-          PY
 
       - name: Build and release plugin
         run: bash .github/build-and-release.sh "$VERSION"
