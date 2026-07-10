@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version, without the leading v. Example: 1.0.7'
+        description: 'Release version, without the leading v. Example: 1.2.3'
         required: true
         type: string
 
@@ -17,6 +17,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Prepare release cleanup
+        run: python3 .github/pre-release-cleanup.py
 
       - name: Build and release plugin
         run: bash .github/build-and-release.sh "$VERSION"
