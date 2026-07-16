@@ -59,7 +59,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Restore Amenities tools and featured data
+      - name: Restore Amenities tools and front-end data
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -84,11 +84,18 @@ jobs:
               content = content.replace(hook_anchor, hook_anchor + missing_hooks, 1)
 
           featured_line = "                'featured' => get_post_meta($post->ID, '_kcsg_featured', true) === '1',\n"
+          website_line = "                'websiteUrl' => get_post_meta($post->ID, '_kcsg_website_url', true),\n"
           amenities_anchor = "                'categories' => $categories,\n"
+
           if featured_line not in content:
               if amenities_anchor not in content:
                   raise SystemExit('Could not find the amenity data payload anchor.')
               content = content.replace(amenities_anchor, amenities_anchor + featured_line, 1)
+
+          if website_line not in content:
+              if featured_line not in content:
+                  raise SystemExit('Could not find the featured amenity payload anchor.')
+              content = content.replace(featured_line, featured_line + website_line, 1)
 
           php_path.write_text(content)
 
@@ -96,13 +103,22 @@ jobs:
               if hook not in content:
                   raise SystemExit('A required Amenities screen hook is missing.')
 
-          if featured_line not in content:
-              raise SystemExit('The featured amenity value is missing from the front-end payload.')
+          for payload_line, label in (
+              (featured_line, 'featured amenity value'),
+              (website_line, 'website URL'),
+          ):
+              if payload_line not in content:
+                  raise SystemExit('The ' + label + ' is missing from the front-end payload.')
 
           js_content = js_path.read_text()
-          for marker in ('function sortFeaturedFirst', 'amenity.featured'):
+          for marker in (
+              'function sortFeaturedFirst',
+              'amenity.featured',
+              'function actionLinksMarkup',
+              'amenity.websiteUrl',
+          ):
               if marker not in js_content:
-                  raise SystemExit('Featured amenity front-end behavior is missing: ' + marker)
+                  raise SystemExit('Required amenity front-end behavior is missing: ' + marker)
           PY
 
       - name: Finalize Explore KC release
