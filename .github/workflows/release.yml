@@ -59,18 +59,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Restore Amenities screen tools
+      - name: Restore Amenities tools and featured data
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          path = Path('build/kc-streetcar-guide/kc-streetcar-guide.php')
-          content = path.read_text()
+          php_path = Path('build/kc-streetcar-guide/kc-streetcar-guide.php')
+          js_path = Path('build/kc-streetcar-guide/assets/kcsg-frontend.js')
+          content = php_path.read_text()
 
           old_save_hook = "        add_action('admin_post_kcsg_save_advanced_settings', array($this, 'save_advanced_settings'));\n"
           content = content.replace(old_save_hook, '')
 
-          anchor = "        add_action('admin_menu', array($this, 'add_stop_photos_page'));\n"
+          hook_anchor = "        add_action('admin_menu', array($this, 'add_stop_photos_page'));\n"
           required_hooks = (
               "        add_action('admin_post_kcsg_save_guide_settings', array($this, 'save_guide_settings'));\n",
               "        add_action('all_admin_notices', array($this, 'render_amenities_screen_tools'));\n",
@@ -78,15 +79,30 @@ jobs:
 
           missing_hooks = ''.join(hook for hook in required_hooks if hook not in content)
           if missing_hooks:
-              if anchor not in content:
+              if hook_anchor not in content:
                   raise SystemExit('Could not find the Streetcar Guide admin hook anchor.')
-              content = content.replace(anchor, anchor + missing_hooks, 1)
+              content = content.replace(hook_anchor, hook_anchor + missing_hooks, 1)
 
-          path.write_text(content)
+          featured_line = "                'featured' => get_post_meta($post->ID, '_kcsg_featured', true) === '1',\n"
+          amenities_anchor = "                'categories' => $categories,\n"
+          if featured_line not in content:
+              if amenities_anchor not in content:
+                  raise SystemExit('Could not find the amenity data payload anchor.')
+              content = content.replace(amenities_anchor, amenities_anchor + featured_line, 1)
+
+          php_path.write_text(content)
 
           for hook in required_hooks:
               if hook not in content:
                   raise SystemExit('A required Amenities screen hook is missing.')
+
+          if featured_line not in content:
+              raise SystemExit('The featured amenity value is missing from the front-end payload.')
+
+          js_content = js_path.read_text()
+          for marker in ('function sortFeaturedFirst', 'amenity.featured'):
+              if marker not in js_content:
+                  raise SystemExit('Featured amenity front-end behavior is missing: ' + marker)
           PY
 
       - name: Finalize Explore KC release
