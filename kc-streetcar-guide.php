@@ -3,7 +3,7 @@
  * Plugin Name: KC Streetcar Guide
  * Description: Interactive streetcar-line visitor guide with admin-manageable amenities, categories, stops, travel times, descriptions, and links.
  * Version: 0.7.2
- * Author: Olivia Kohring
+ * Author: Liv Kohring
  * Text Domain: kc-streetcar-guide
  */
 
@@ -36,7 +36,7 @@ final class KCSG_Plugin {
         add_action('save_post_' . self::CPT, array($this, 'save_amenity_meta'));
         add_action('admin_enqueue_scripts', array($this, 'admin_styles'));
         add_action('admin_menu', array($this, 'add_stop_photos_page'));
-        add_action('admin_post_kcsg_save_stop_photos', array($this, 'save_stop_photos'));
+        add_action('admin_post__save_stop_photos', array($this, 'save_stop_photos'));
         add_action('rest_api_init', array($this, 'register_rest_routes'));
         add_action(self::TAX . '_add_form_fields', array($this, 'render_category_color_add_field'));
         add_action(self::TAX . '_edit_form_fields', array($this, 'render_category_color_edit_field'));
@@ -229,9 +229,6 @@ final class KCSG_Plugin {
         wp_nonce_field(self::NONCE, self::NONCE);
 
         $stop = get_post_meta($post->ID, '_kcsg_stop', true);
-        $walk_from_stop = get_post_meta($post->ID, '_kcsg_walk_from_stop', true);
-        $walk_from_hotel = get_post_meta($post->ID, '_kcsg_walk_from_hotel', true);
-        $drive_from_hotel = get_post_meta($post->ID, '_kcsg_drive_from_hotel', true);
         $description = get_post_meta($post->ID, '_kcsg_description', true);
         $url = get_post_meta($post->ID, '_kcsg_url', true);
         $current_terms = get_the_terms($post->ID, self::TAX);
@@ -264,21 +261,6 @@ final class KCSG_Plugin {
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </select>
-            </p>
-
-            <p class="kcsg-admin-field">
-                <label for="kcsg_walk_from_stop"><strong><?php esc_html_e('Walk from Stop', 'kc-streetcar-guide'); ?></strong></label>
-                <input type="text" name="kcsg_walk_from_stop" id="kcsg_walk_from_stop" value="<?php echo esc_attr($walk_from_stop); ?>" placeholder="4 min" />
-            </p>
-
-            <p class="kcsg-admin-field">
-                <label for="kcsg_walk_from_hotel"><strong><?php esc_html_e('Walk from Hotel', 'kc-streetcar-guide'); ?></strong></label>
-                <input type="text" name="kcsg_walk_from_hotel" id="kcsg_walk_from_hotel" value="<?php echo esc_attr($walk_from_hotel); ?>" placeholder="12 min" />
-            </p>
-
-            <p class="kcsg-admin-field">
-                <label for="kcsg_drive_from_hotel"><strong><?php esc_html_e('Drive from Hotel', 'kc-streetcar-guide'); ?></strong></label>
-                <input type="text" name="kcsg_drive_from_hotel" id="kcsg_drive_from_hotel" value="<?php echo esc_attr($drive_from_hotel); ?>" placeholder="5 min" />
             </p>
 
             <p class="kcsg-admin-field kcsg-admin-field-full">
@@ -315,9 +297,6 @@ final class KCSG_Plugin {
 
         $fields = array(
             '_kcsg_stop' => $stop,
-            '_kcsg_walk_from_stop' => isset($_POST['kcsg_walk_from_stop']) ? sanitize_text_field(wp_unslash($_POST['kcsg_walk_from_stop'])) : '',
-            '_kcsg_walk_from_hotel' => isset($_POST['kcsg_walk_from_hotel']) ? sanitize_text_field(wp_unslash($_POST['kcsg_walk_from_hotel'])) : '',
-            '_kcsg_drive_from_hotel' => isset($_POST['kcsg_drive_from_hotel']) ? sanitize_text_field(wp_unslash($_POST['kcsg_drive_from_hotel'])) : '',
             '_kcsg_description' => isset($_POST['kcsg_description']) ? sanitize_textarea_field(wp_unslash($_POST['kcsg_description'])) : '',
             '_kcsg_url' => isset($_POST['kcsg_url']) ? esc_url_raw(wp_unslash($_POST['kcsg_url'])) : '',
         );
@@ -707,9 +686,6 @@ final class KCSG_Plugin {
             }
 
             update_post_meta($post_id, '_kcsg_stop', $sample['stop']);
-            update_post_meta($post_id, '_kcsg_walk_from_stop', $sample['walk_from_stop']);
-            update_post_meta($post_id, '_kcsg_walk_from_hotel', $sample['walk_from_hotel']);
-            update_post_meta($post_id, '_kcsg_drive_from_hotel', $sample['drive_from_hotel']);
             update_post_meta($post_id, '_kcsg_description', $sample['description']);
 
             if (!empty($sample['url'])) {
@@ -761,7 +737,6 @@ final class KCSG_Plugin {
             $new_columns[$key] = $label;
             if ($key === 'title') {
                 $new_columns['kcsg_stop'] = __('Streetcar Stop', 'kc-streetcar-guide');
-                $new_columns['kcsg_times'] = __('Times', 'kc-streetcar-guide');
             }
         }
         return $new_columns;
@@ -774,22 +749,6 @@ final class KCSG_Plugin {
             echo esc_html(isset($stops[$stop_id]) ? $stops[$stop_id] : '—');
         }
 
-        if ($column === 'kcsg_times') {
-            $walk_stop = get_post_meta($post_id, '_kcsg_walk_from_stop', true);
-            $walk_hotel = get_post_meta($post_id, '_kcsg_walk_from_hotel', true);
-            $drive_hotel = get_post_meta($post_id, '_kcsg_drive_from_hotel', true);
-            $parts = array();
-            if ($walk_stop) {
-                $parts[] = sprintf(__('Stop walk: %s', 'kc-streetcar-guide'), $walk_stop);
-            }
-            if ($walk_hotel) {
-                $parts[] = sprintf(__('Hotel walk: %s', 'kc-streetcar-guide'), $walk_hotel);
-            }
-            if ($drive_hotel) {
-                $parts[] = sprintf(__('Hotel drive: %s', 'kc-streetcar-guide'), $drive_hotel);
-            }
-            echo $parts ? esc_html(implode(' | ', $parts)) : esc_html__('—', 'kc-streetcar-guide');
-        }
     }
 
     public function register_rest_routes() {
@@ -1058,9 +1017,6 @@ final class KCSG_Plugin {
                 'stop' => $stop_id,
                 'stopLabel' => isset($stops[$stop_id]) ? $stops[$stop_id] : '',
                 'categories' => $categories,
-                'walkFromStop' => get_post_meta($post->ID, '_kcsg_walk_from_stop', true),
-                'walkFromHotel' => get_post_meta($post->ID, '_kcsg_walk_from_hotel', true),
-                'driveFromHotel' => get_post_meta($post->ID, '_kcsg_drive_from_hotel', true),
                 'description' => get_post_meta($post->ID, '_kcsg_description', true),
                 'url' => get_post_meta($post->ID, '_kcsg_url', true),
             );
@@ -1092,7 +1048,7 @@ final class KCSG_Plugin {
 
     public function render_shortcode($atts) {
         $atts = shortcode_atts(array(
-            'title' => 'KC Streetcar Visitor Guide',
+            'title' => 'KC Streetcar Guide',
             'intro' => 'Choose a category or click a streetcar stop to find nearby amenities.',
         ), $atts, 'kc_streetcar_guide');
 
