@@ -8,5 +8,5 @@
   "tested": "6.6",
   "requires_php": "7.4",
   "description": "Interactive WordPress visitor guide for amenities near the KC Streetcar line.",
-  "changelog": "Keeps amenity-level Executive Pick toggles, advanced font controls, entity decoding, map-link-only amenities, and bulk stop photo crop tools. Removes Featured Locations cards and SVG map stars."
+  "changelog": "Removes Advanced Settings and nonworking font controls, adds the Explore KC shortcode and customizable featured badge label to the Amenities screen, cleans up amenity help text, and fixes the unchecked featured checkbox display."
 }
