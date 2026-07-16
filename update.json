@@ -1,12 +1,12 @@
 {
   "name": "KC Streetcar Guide",
   "slug": "kc-streetcar-guide",
-  "version": "1.4.1",
-  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v1.4.1/kc-streetcar-guide.zip",
+  "version": "1.4.2",
+  "download_url": "https://github.com/okohring/kc-streetcar-guide/releases/download/v1.4.2/kc-streetcar-guide.zip",
   "details_url": "https://github.com/okohring/kc-streetcar-guide",
   "requires": "6.0",
   "tested": "6.6",
   "requires_php": "7.4",
   "description": "Interactive WordPress visitor guide for amenities near the KC Streetcar line.",
-  "changelog": "Removes Advanced Settings and nonworking font controls, adds the Explore KC shortcode and customizable featured badge label to the Amenities screen, cleans up amenity help text, and fixes the unchecked featured checkbox display."
+  "changelog": "Keeps amenity-level Executive Pick toggles, advanced font controls, entity decoding, map-link-only amenities, and bulk stop photo crop tools. Removes Featured Locations cards and SVG map stars."
 }
