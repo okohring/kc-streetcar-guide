@@ -59,6 +59,36 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
+      - name: Restore Amenities screen tools
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('build/kc-streetcar-guide/kc-streetcar-guide.php')
+          content = path.read_text()
+
+          old_save_hook = "        add_action('admin_post_kcsg_save_advanced_settings', array($this, 'save_advanced_settings'));\n"
+          content = content.replace(old_save_hook, '')
+
+          anchor = "        add_action('admin_menu', array($this, 'add_stop_photos_page'));\n"
+          required_hooks = (
+              "        add_action('admin_post_kcsg_save_guide_settings', array($this, 'save_guide_settings'));\n",
+              "        add_action('all_admin_notices', array($this, 'render_amenities_screen_tools'));\n",
+          )
+
+          missing_hooks = ''.join(hook for hook in required_hooks if hook not in content)
+          if missing_hooks:
+              if anchor not in content:
+                  raise SystemExit('Could not find the Streetcar Guide admin hook anchor.')
+              content = content.replace(anchor, anchor + missing_hooks, 1)
+
+          path.write_text(content)
+
+          for hook in required_hooks:
+              if hook not in content:
+                  raise SystemExit('A required Amenities screen hook is missing.')
+          PY
+
       - name: Finalize Explore KC release
         run: bash .github/finalize-release.sh "${{ steps.version.outputs.value }}"
         env:
