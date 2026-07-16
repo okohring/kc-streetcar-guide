@@ -164,7 +164,7 @@ if '$featured_label = self::get_featured_label();' not in php:
 
 php = re.sub(
     r'<label><input type="checkbox" name="kcsg_featured" id="kcsg_featured" value="1" <\?php checked\(\$featured, \'1\'\); \?> /> <\?php esc_html_e\(\'Show as an executive pick\', \'kc-streetcar-guide\'\); \?></label>',
-    '<label class="kcsg-featured-toggle"><input type="checkbox" name="kcsg_featured" id="kcsg_featured" value="1" <?php checked($featured, \'1\'); ?> /> <?php echo esc_html(sprintf(__(\'Show the “%s” badge\', \'kc-streetcar-guide\'), $featured_label)); ?></label>',
+    '<label class="kcsg-featured-toggle"><input type="checkbox" name="kcsg_featured" id="kcsg_featured" value="1" <?php checked($featured, \'1\'); ?> /> <?php echo esc_html(sprintf(__(\'Show\', \'kc-streetcar-guide\'), $featured_label)); ?></label>',
     php,
     count=1,
 )
