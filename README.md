@@ -25,9 +25,6 @@ Optional shortcode attributes:
 - Name: WordPress post title
 - Streetcar Stop: dropdown in Amenity Details
 - Category: dropdown in Amenity Details
-- Walk from Stop
-- Walk from Hotel
-- Drive from Hotel
 - Description
 - URL
 
